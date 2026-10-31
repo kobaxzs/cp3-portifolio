@@ -1,31 +1,36 @@
-import { Readable } from 'node:stream';
-import { handleContact } from './contact.js';
-
-export function contactDevPlugin(env) {
+import { Readable as FluxoLeitura } from 'node:stream';
+import { tratarContato } from './contact.js';
+export function pluginContatoLocal(ambiente) {
   return {
     name: 'portfolio-contact-api',
     apply: 'serve',
-    configureServer(server) {
-      server.middlewares.use(async (req, res, next) => {
-        if (req.url?.split('?')[0] !== '/api/contact') return next();
-
+    configureServer(servidor) {
+      servidor.middlewares.use(async (requisicaoRecebida, respostaServidor, continuar) => {
+        if (requisicaoRecebida.url?.split('?')[0] !== '/api/contact') return continuar();
         try {
-          const request = new Request(new URL(req.url, 'http://localhost'), {
-            method: req.method,
-            headers: req.headers,
-            ...(req.method !== 'GET' && req.method !== 'HEAD'
-              ? { body: Readable.toWeb(req), duplex: 'half' }
+          const solicitacao = new Request(new URL(requisicaoRecebida.url, 'http://localhost'), {
+            method: requisicaoRecebida.method,
+            headers: requisicaoRecebida.headers,
+            ...(requisicaoRecebida.method !== 'GET' && requisicaoRecebida.method !== 'HEAD'
+              ? {
+                  body: FluxoLeitura.toWeb(requisicaoRecebida),
+                  duplex: 'half',
+                }
               : {}),
           });
-          const response = await handleContact(request, env);
-          res.writeHead(response.status, Object.fromEntries(response.headers));
-          res.end(Buffer.from(await response.arrayBuffer()));
+          const resposta = await tratarContato(solicitacao, ambiente);
+          respostaServidor.writeHead(resposta.status, Object.fromEntries(resposta.headers));
+          respostaServidor.end(Buffer.from(await resposta.arrayBuffer()));
         } catch {
-          res.writeHead(500, {
+          respostaServidor.writeHead(500, {
             'Content-Type': 'application/json',
             'Cache-Control': 'no-store',
           });
-          res.end(JSON.stringify({ error: 'Não foi possível processar sua mensagem.' }));
+          respostaServidor.end(
+            JSON.stringify({
+              error: 'Não foi possível processar sua mensagem.',
+            }),
+          );
         }
       });
     },

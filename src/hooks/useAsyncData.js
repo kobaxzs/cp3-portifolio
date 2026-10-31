@@ -1,22 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useEffect as useEfeito, useState as useEstado } from 'react';
 
 // Evita repetir loading/erro/dados em cada página. O cache fica nos services.
-export default function useAsyncData(load) {
-  const [state, setState] = useState({ loading: true, data: null, error: '' });
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    let active = true;
-    setState({ loading: true, data: null, error: '' });
-    load()
-      .then((data) => {
-        if (active) setState({ loading: false, data, error: '' });
+export default function useDados(carregar) {
+  const [estado, definirEstado] = useEstado({
+    carregando: true,
+    dados: null,
+    erro: '',
+  });
+  const [tentativa, definirTentativa] = useEstado(0);
+  useEfeito(() => {
+    let ativo = true;
+    definirEstado({
+      carregando: true,
+      dados: null,
+      erro: '',
+    });
+    carregar()
+      .then((dados) => {
+        if (ativo)
+          definirEstado({
+            carregando: false,
+            dados,
+            erro: '',
+          });
       })
-      .catch((error) => {
-        if (active) setState({ loading: false, data: null, error: error.message });
+      .catch((erro) => {
+        if (ativo)
+          definirEstado({
+            carregando: false,
+            dados: null,
+            erro: erro.message,
+          });
       });
     return () => {
-      active = false;
+      ativo = false;
     };
-  }, [load, attempt]);
-  return { ...state, retry: () => setAttempt(attempt + 1) };
+  }, [carregar, tentativa]);
+  return {
+    ...estado,
+    tentarNovamente: () => definirTentativa(tentativa + 1),
+  };
 }

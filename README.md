@@ -57,6 +57,11 @@ testes e precisam ser verificadas com as contas reais.
 
 Copie `.env.example` para `.env` e preencha os valores. Reinicie o Vite depois.
 
+As variáveis do projeto usam nomes em português. A função
+`normalizarVariaveisAmbiente`, em `src/utils/ambiente.js`, também aceita os nomes
+anteriores em inglês para manter a compatibilidade com o deploy já configurado.
+Quando os dois nomes existem, o valor com nome em português tem preferência.
+
 ### Supabase
 
 1. Crie o projeto e execute `supabase/schema.sql` no SQL Editor.
@@ -68,14 +73,14 @@ Copie `.env.example` para `.env` e preencha os valores. Reinicie o Vite depois.
    insert into public.portfolio_owners (id) values ('UUID-REAL-DO-USUARIO');
    ```
 
-4. Preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`.
-5. No servidor, preencha `SUPABASE_URL` e `SUPABASE_SECRET_KEY`.
+4. Preencha `VITE_URL_SUPABASE` e `VITE_CHAVE_PUBLICA_SUPABASE`.
+5. No servidor, preencha `URL_SUPABASE` e `CHAVE_SECRETA_SUPABASE`.
 6. Configure as URLs de Authentication para o endereço usado pelo site.
 
 ### Resend
 
-Preencha `RESEND_API_KEY`, `CONTACT_FROM_EMAIL` com um remetente autorizado e
-`CONTACT_TO_EMAIL` com o destinatário. A resposta ao visitante é feita pelo seu
+Preencha `CHAVE_API_RESEND`, `EMAIL_REMETENTE_CONTATO` com um remetente autorizado e
+`EMAIL_DESTINATARIO_CONTATO` com o destinatário. A resposta ao visitante é feita pelo seu
 aplicativo de e-mail; a marcação como respondida no painel é manual.
 
 As chaves privadas ficam somente no servidor. Variáveis com prefixo `VITE_`
@@ -99,7 +104,10 @@ docs/             decisões técnicas, uso da IA e evidências de verificação
 ```
 
 Componentes em PascalCase, hooks com prefixo `use`, funções e variáveis em
-camelCase. Chamadas às APIs ficam nos serviços, separadas dos componentes visuais.
+camelCase. Os identificadores próprios são escritos em português, sem acentos,
+como `repositorio`, `carregando` e `obterMensagens`. Nomes das APIs, atributos
+HTML, métodos das bibliotecas e campos do banco preservam seus contratos.
+Chamadas às APIs ficam nos serviços, separadas dos componentes visuais.
 
 Use branches `feature/nome`, `fix/nome` ou `docs/nome` e commits com `feat:`, `fix:`, `docs:`,
 `style:` ou `test:`. Integre em `main` por pull request, registrando o histórico
@@ -149,6 +157,8 @@ com os resultados e as verificações visuais que ainda faltam.
       variáveis de ambiente. Confirmar deploy automático após um push real.
 - [ ] Na URL pública, conferir menu, cards, formulário e painel em celular e
       desktop, sem cortes ou rolagem horizontal.
+- [ ] Confirmar no site publicado que o tema escolhido permanece após atualizar
+      a página e voltar ao site.
 - [x] Abrir diretamente o link de um projeto, atualizar o navegador e conferir
       a página 404 no site publicado.
 - [ ] Conferir falhas da API do GitHub e os dados dos repositórios na interface.
@@ -158,8 +168,11 @@ com os resultados e as verificações visuais que ainda faltam.
       o reaproveitamento das consultas ao GitHub entre páginas.
 - [x] Preparar instruções para IA, skill de revisão, registro do harness e
       comparação das decisões técnicas conforme o resumo do enunciado.
-- [ ] Confirmar a skill na interface do Codex e publicar as instruções e a
-      documentação no GitHub. Revisar a identificação do modelo para a apresentação.
+- [x] Confirmar o reconhecimento da skill pelo Codex e publicar as instruções
+      e a documentação no GitHub (PR #3 integrado).
+- [x] Registrar GPT-5.6 Luna como modelo do ChatGPT gratuito informado pelo aluno.
+- [ ] Conferir o modelo selecionado no Codex e explicar a escolha das ferramentas
+      na apresentação.
 - [ ] Preparar e gravar o vídeo de até oito minutos, com rosto e tela visíveis,
       explicando arquitetura, escolhas técnicas e uso real da IA. Publicar no
       YouTube como não listado.

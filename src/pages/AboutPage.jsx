@@ -1,29 +1,30 @@
-import { Link } from 'react-router';
-import { profile } from '../config.js';
-import Icon from '../components/Icon.jsx';
-
-const studies = [
+import { Link as LinkInterno } from 'react-router';
+import { perfil } from '../config.js';
+import Icone from '../components/Icon.jsx';
+const estudos = [
   {
-    number: '01',
-    title: 'Fundamentos primeiro',
-    text: 'Lógica, funções, arrays e objetos em JavaScript: entender a base para construir com mais clareza.',
-    tags: ['JavaScript', 'Lógica', 'DOM'],
+    numero: '01',
+    titulo: 'Fundamentos primeiro',
+    texto:
+      'Lógica, funções, arrays e objetos em JavaScript: entender a base para construir com mais clareza.',
+    etiquetas: ['JavaScript', 'Lógica', 'DOM'],
   },
   {
-    number: '02',
-    title: 'Interfaces em componentes',
-    text: 'Estudando como organizar interfaces em React, conectar dados de APIs e lidar com estados e navegação.',
-    tags: ['React', 'JSX', 'APIs', 'CSS'],
+    numero: '02',
+    titulo: 'Interfaces em componentes',
+    texto:
+      'Estudando como organizar interfaces em React, conectar dados de APIs e lidar com estados e navegação.',
+    etiquetas: ['React', 'JSX', 'APIs', 'CSS'],
   },
   {
-    number: '03',
-    title: 'Além do código',
-    text: 'Praticando versionamento, organização e documentação para tornar cada projeto mais fácil de entender e evoluir.',
-    tags: ['Git', 'GitHub', 'Documentação'],
+    numero: '03',
+    titulo: 'Além do código',
+    texto:
+      'Praticando versionamento, organização e documentação para tornar cada projeto mais fácil de entender e evoluir.',
+    etiquetas: ['Git', 'GitHub', 'Documentação'],
   },
 ];
-
-export default function AboutPage() {
+export default function PaginaSobre() {
   return (
     <div className="container page section">
       <div className="page-heading">
@@ -34,8 +35,8 @@ export default function AboutPage() {
           <span>E em movimento.</span>
         </h1>
         <p>
-          Sou {profile.name}, estudante de Engenharia de Software na FIAP. Este é o espaço onde
-          reúno minha jornada, meus estudos e os projetos que vou colocando no mundo.
+          Sou {perfil.nome}, estudante de Engenharia de Software na FIAP. Este é o espaço onde reúno
+          minha jornada, meus estudos e os projetos que vou colocando no mundo.
         </p>
       </div>
       <div className="about-statement">
@@ -58,12 +59,12 @@ export default function AboutPage() {
             software. Os projetos publicados no meu GitHub mostram essa evolução na prática.
           </p>
           <a
-            href={`https://github.com/${profile.github}`}
+            href={`https://github.com/${perfil.usuarioGithub}`}
             className="text-link"
             target="_blank"
             rel="noreferrer"
           >
-            Acompanhar no GitHub <Icon name="arrow" size={18} />
+            Acompanhar no GitHub <Icone nome="seta" tamanho={18} />
           </a>
         </div>
       </div>
@@ -77,15 +78,15 @@ export default function AboutPage() {
           </div>
         </div>
         <div className="study-grid">
-          {studies.map((study) => (
-            <article className="study-card" key={study.number}>
-              <span className="study-number">/{study.number}</span>
-              <h3>{study.title}</h3>
-              <p>{study.text}</p>
+          {estudos.map((estudo) => (
+            <article className="study-card" key={estudo.numero}>
+              <span className="study-number">/{estudo.numero}</span>
+              <h3>{estudo.titulo}</h3>
+              <p>{estudo.texto}</p>
               <div className="tag-list">
-                {study.tags.map((tag) => (
-                  <span className="tag" key={tag}>
-                    {tag}
+                {estudo.etiquetas.map((etiqueta) => (
+                  <span className="tag" key={etiqueta}>
+                    {etiqueta}
                   </span>
                 ))}
               </div>
@@ -95,9 +96,9 @@ export default function AboutPage() {
       </section>
       <section className="small-cta">
         <h2>Tem algo para compartilhar?</h2>
-        <Link to="/contato" className="button">
-          Vamos conversar <Icon name="arrow" size={18} />
-        </Link>
+        <LinkInterno to="/contato" className="button">
+          Vamos conversar <Icone nome="seta" tamanho={18} />
+        </LinkInterno>
       </section>
     </div>
   );

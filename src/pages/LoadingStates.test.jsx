@@ -1,158 +1,215 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
-import { AuthContext } from '../hooks/AuthContext.js';
-import HomePage from './HomePage.jsx';
-import ProjectsPage from './ProjectsPage.jsx';
-import DashboardPage from './admin/DashboardPage.jsx';
-import { getRepositories } from '../services/github.js';
-import { getFeaturedProjects } from '../services/featured.js';
-import { getMessages, getOwnerFeatured, toggleFeatured } from '../services/dashboard.js';
-
-vi.mock('../services/github.js', () => ({ getRepositories: vi.fn() }));
-vi.mock('../services/featured.js', () => ({ getFeaturedProjects: vi.fn() }));
-vi.mock('../services/dashboard.js', () => ({
-  getMessages: vi.fn(),
-  getOwnerFeatured: vi.fn(),
-  toggleFeatured: vi.fn(),
-  setResponded: vi.fn(),
+import {
+  beforeEach as antesDeCadaTeste,
+  describe as descrever,
+  expect as esperar,
+  it as teste,
+  vi,
+} from 'vitest';
+import { act as agir, render as renderizar, screen as tela } from '@testing-library/react';
+import eventosUsuario from '@testing-library/user-event';
+import { MemoryRouter as RotasMemoria } from 'react-router';
+import { ContextoAutenticacao } from '../hooks/AuthContext.js';
+import PaginaInicial from './HomePage.jsx';
+import PaginaProjetos from './ProjectsPage.jsx';
+import PaginaPainel from './admin/DashboardPage.jsx';
+import { obterRepositorios } from '../services/github.js';
+import { obterProjetosDestaque } from '../services/featured.js';
+import { obterMensagens, obterDestaquesDono, alterarDestaque } from '../services/dashboard.js';
+vi.mock('../services/github.js', () => ({
+  obterRepositorios: vi.fn(),
 }));
-vi.mock('../services/supabase.js', () => ({ signOut: vi.fn() }));
+vi.mock('../services/featured.js', () => ({
+  obterProjetosDestaque: vi.fn(),
+}));
+vi.mock('../services/dashboard.js', () => ({
+  obterMensagens: vi.fn(),
+  obterDestaquesDono: vi.fn(),
+  alterarDestaque: vi.fn(),
+  marcarRespondida: vi.fn(),
+}));
+vi.mock('../services/supabase.js', () => ({
+  encerrarSessao: vi.fn(),
+}));
 
 // Dados usados somente nos testes; nenhuma conta externa é acessada.
-const repo = {
+const repositorio = {
   id: 1,
   name: 'projeto-teste',
   language: 'JavaScript',
-  owner: { login: 'teste' },
+  dono: {
+    login: 'teste',
+  },
   updated_at: '2026-10-28T00:00:00Z',
   stargazers_count: 0,
 };
-
-function renderPage(page) {
-  return render(
-    <AuthContext.Provider value={{ session: { user: { email: 'pessoa@example.com' } } }}>
-      <MemoryRouter>{page}</MemoryRouter>
-    </AuthContext.Provider>,
+function renderizarPagina(pagina) {
+  return renderizar(
+    <ContextoAutenticacao.Provider
+      value={{
+        sessao: {
+          user: {
+            email: 'pessoa@example.com',
+          },
+        },
+      }}
+    >
+      <RotasMemoria>{pagina}</RotasMemoria>
+    </ContextoAutenticacao.Provider>,
   );
 }
-
-beforeEach(() => {
+antesDeCadaTeste(() => {
   vi.resetAllMocks();
-  getRepositories.mockResolvedValue([repo]);
-  getFeaturedProjects.mockResolvedValue({ configured: true, names: [] });
-  getMessages.mockResolvedValue([]);
-  getOwnerFeatured.mockResolvedValue([]);
+  obterRepositorios.mockResolvedValue([repositorio]);
+  obterProjetosDestaque.mockResolvedValue({
+    configurado: true,
+    nomes: [],
+  });
+  obterMensagens.mockResolvedValue([]);
+  obterDestaquesDono.mockResolvedValue([]);
 });
-
-describe('estados dos dados de API', () => {
-  it('exibe skeleton e depois lista vazia quando o GitHub não tem projetos', async () => {
-    let finish;
-    getRepositories.mockReturnValue(
-      new Promise((resolve) => {
-        finish = resolve;
+descrever('estados dos dados de API', () => {
+  teste('exibe skeleton e depois lista vazia quando o GitHub não tem projetos', async () => {
+    let concluir;
+    obterRepositorios.mockReturnValue(
+      new Promise((resolver) => {
+        concluir = resolver;
       }),
     );
-    renderPage(<ProjectsPage />);
-    expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Carregando projetos');
-    await act(async () => {
-      finish([]);
+    renderizarPagina(<PaginaProjetos />);
+    esperar(tela.getByRole('status')).toHaveAttribute('aria-label', 'Carregando projetos');
+    await agir(async () => {
+      concluir([]);
     });
-    expect(
-      await screen.findByRole('heading', { name: 'Ainda não há projetos públicos' }),
+    esperar(
+      await tela.findByRole('heading', {
+        name: 'Ainda não há projetos públicos',
+      }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    esperar(tela.queryByRole('status')).not.toBeInTheDocument();
   });
-
-  it('mantém a home em carregamento enquanto consulta os destaques', async () => {
-    let finish;
-    getFeaturedProjects.mockReturnValue(
-      new Promise((resolve) => {
-        finish = resolve;
+  teste('mantém a home em carregamento enquanto consulta os destaques', async () => {
+    let concluir;
+    obterProjetosDestaque.mockReturnValue(
+      new Promise((resolver) => {
+        concluir = resolver;
       }),
     );
-    renderPage(<HomePage />);
-    expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Carregando projetos');
-    await act(async () => {
-      finish({ configured: true, names: [] });
+    renderizarPagina(<PaginaInicial />);
+    esperar(tela.getByRole('status')).toHaveAttribute('aria-label', 'Carregando projetos');
+    await agir(async () => {
+      concluir({
+        configurado: true,
+        nomes: [],
+      });
     });
-    expect(await screen.findByRole('link', { name: 'projeto teste' })).toBeInTheDocument();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
-  });
-
-  it('avisa da falha nos destaques e mantém os projetos recentes disponíveis', async () => {
-    getFeaturedProjects.mockRejectedValue(new Error('Falha na consulta dos destaques.'));
-    renderPage(<HomePage />);
-    expect(await screen.findByRole('link', { name: 'projeto teste' })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('Os destaques estão indisponíveis');
-  });
-
-  it('distingue destaques indisponíveis de ausência de repositórios', async () => {
-    getFeaturedProjects.mockResolvedValue({ configured: true, names: ['projeto-removido'] });
-    renderPage(<HomePage />);
-    expect(
-      await screen.findByRole('heading', { name: 'Nenhum destaque disponível' }),
+    esperar(
+      await tela.findByRole('link', {
+        name: 'projeto teste',
+      }),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByText('Ainda não há repositórios públicos para mostrar.'),
+    esperar(tela.queryByRole('status')).not.toBeInTheDocument();
+  });
+  teste('avisa da falha nos destaques e mantém os projetos recentes disponíveis', async () => {
+    obterProjetosDestaque.mockRejectedValue(new Error('Falha na consulta dos destaques.'));
+    renderizarPagina(<PaginaInicial />);
+    esperar(
+      await tela.findByRole('link', {
+        name: 'projeto teste',
+      }),
+    ).toBeInTheDocument();
+    esperar(tela.getByRole('status')).toHaveTextContent('Os destaques estão indisponíveis');
+  });
+  teste('distingue destaques indisponíveis de ausência de repositórios', async () => {
+    obterProjetosDestaque.mockResolvedValue({
+      configurado: true,
+      nomes: ['projeto-removido'],
+    });
+    renderizarPagina(<PaginaInicial />);
+    esperar(
+      await tela.findByRole('heading', {
+        name: 'Nenhum destaque disponível',
+      }),
+    ).toBeInTheDocument();
+    esperar(
+      tela.queryByText('Ainda não há repositórios públicos para mostrar.'),
     ).not.toBeInTheDocument();
   });
-
-  it('mostra carregamento e estados vazios das listas do painel', async () => {
-    let finish;
-    getMessages.mockReturnValue(
-      new Promise((resolve) => {
-        finish = resolve;
+  teste('mostra carregamento e estados vazios das listas do painel', async () => {
+    let concluir;
+    obterMensagens.mockReturnValue(
+      new Promise((resolver) => {
+        concluir = resolver;
       }),
     );
-    getRepositories.mockResolvedValue([]);
-    renderPage(<DashboardPage />);
-    expect(screen.getByRole('status')).toHaveTextContent('Carregando painel');
-    await act(async () => {
-      finish([]);
+    obterRepositorios.mockResolvedValue([]);
+    renderizarPagina(<PaginaPainel />);
+    esperar(tela.getByRole('status')).toHaveTextContent('Carregando painel');
+    await agir(async () => {
+      concluir([]);
     });
-    expect(
-      await screen.findByRole('heading', { name: 'Nenhuma mensagem nesta lista' }),
+    esperar(
+      await tela.findByRole('heading', {
+        name: 'Nenhuma mensagem nesta lista',
+      }),
     ).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Projetos em destaque' }));
-    expect(
-      await screen.findByRole('heading', { name: 'Nenhum projeto disponível' }),
+    await eventosUsuario.click(
+      tela.getByRole('button', {
+        name: 'Projetos em destaque',
+      }),
+    );
+    esperar(
+      await tela.findByRole('heading', {
+        name: 'Nenhum projeto disponível',
+      }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/sem seleção, a página inicial/i)).toBeInTheDocument();
+    esperar(tela.getByText(/sem seleção, a página inicial/i)).toBeInTheDocument();
   });
-
-  it('mostra erro de consulta do painel e permite tentar novamente', async () => {
-    getOwnerFeatured.mockRejectedValueOnce(new Error('Não foi possível carregar os destaques.'));
-    renderPage(<DashboardPage />);
-    expect(await screen.findByRole('alert')).toHaveTextContent(
+  teste('mostra erro de consulta do painel e permite tentar novamente', async () => {
+    obterDestaquesDono.mockRejectedValueOnce(new Error('Não foi possível carregar os destaques.'));
+    renderizarPagina(<PaginaPainel />);
+    esperar(await tela.findByRole('alert')).toHaveTextContent(
       'Não foi possível carregar os destaques.',
     );
-    await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
-    expect(
-      await screen.findByRole('heading', { name: 'Nenhuma mensagem nesta lista' }),
+    await eventosUsuario.click(
+      tela.getByRole('button', {
+        name: 'Tentar novamente',
+      }),
+    );
+    esperar(
+      await tela.findByRole('heading', {
+        name: 'Nenhuma mensagem nesta lista',
+      }),
     ).toBeInTheDocument();
   });
-
-  it('indica salvamento e bloqueia o destaque até a resposta da API', async () => {
-    let finish;
-    toggleFeatured.mockImplementation(
+  teste('indica salvamento e bloqueia o destaque até a resposta da API', async () => {
+    let concluir;
+    alterarDestaque.mockImplementation(
       () =>
-        new Promise((resolve) => {
-          finish = resolve;
+        new Promise((resolver) => {
+          concluir = resolver;
         }),
     );
-    getOwnerFeatured.mockResolvedValueOnce([]).mockResolvedValueOnce([repo.name]);
-    renderPage(<DashboardPage />);
-    await screen.findByRole('heading', { name: 'Nenhuma mensagem nesta lista' });
-    await userEvent.click(screen.getByRole('button', { name: 'Projetos em destaque' }));
-    await userEvent.click(screen.getByRole('checkbox', { name: `Destacar ${repo.name}` }));
-    expect(screen.getByText('Salvando…')).toBeInTheDocument();
-    expect(screen.getByRole('checkbox')).toBeDisabled();
-    await act(async () => {
-      finish();
+    obterDestaquesDono.mockResolvedValueOnce([]).mockResolvedValueOnce([repositorio.name]);
+    renderizarPagina(<PaginaPainel />);
+    await tela.findByRole('heading', {
+      name: 'Nenhuma mensagem nesta lista',
     });
-    expect(await screen.findByRole('checkbox')).toBeChecked();
-    expect(screen.getByRole('checkbox')).toBeEnabled();
+    await eventosUsuario.click(
+      tela.getByRole('button', {
+        name: 'Projetos em destaque',
+      }),
+    );
+    await eventosUsuario.click(
+      tela.getByRole('checkbox', {
+        name: `Destacar ${repositorio.name}`,
+      }),
+    );
+    esperar(tela.getByText('Salvando…')).toBeInTheDocument();
+    esperar(tela.getByRole('checkbox')).toBeDisabled();
+    await agir(async () => {
+      concluir();
+    });
+    esperar(await tela.findByRole('checkbox')).toBeChecked();
+    esperar(tela.getByRole('checkbox')).toBeEnabled();
   });
 });

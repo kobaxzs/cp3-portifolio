@@ -12,12 +12,15 @@ acesso ao repositório local. Esse acesso permite ler arquivos, propor e aplicar
 diffs e executar os comandos de validação do projeto. Um chat sem acesso ao
 repositório exigiria copiar o contexto e aplicar as mudanças manualmente.
 
-O aluno descreveu o modelo utilizado como **“o mais básico do ChatGPT”**.
-Essa é a descrição informada pelo aluno; o identificador e a versão exatos
-não foram confirmados. Ela não significa que um modelo específico tenha sido
-fixado em configuração, nem comprova quais modelos atenderam todas as etapas
-anteriores. Na apresentação, diferencie a ferramenta Codex do modelo que ela
-executa. Não houve comparação formal de desempenho ou custo entre modelos.
+O modelo informado pelo aluno para o **ChatGPT no plano gratuito é GPT-5.6 Luna**.
+O critério informado foi utilizar a opção disponível sem assinatura paga.
+Essa identificação foi fornecida pelo aluno e não representa uma comparação
+formal de desempenho ou custo entre modelos.
+
+As alterações no repositório nesta etapa foram feitas pelo Codex. O nome do
+modelo informado para o ChatGPT não identifica automaticamente o modelo
+selecionado nas sessões do Codex, que ainda precisa ser conferido para a
+apresentação.
 
 ## Configuração mantida no repositório
 
@@ -44,7 +47,9 @@ e carrega o procedimento detalhado quando necessário.
 A skill passou pelo validador estrutural do Skill Creator. Seu procedimento
 foi lido e seguido na revisão desta documentação: checagem de formatação,
 conferência dos links locais e separação dos arquivos do commit. Isso ainda
-não comprova a descoberta automática pela interface do aluno.
+não comprova, por si só, a descoberta automática. Na sessão seguinte, a skill
+`revisar-portfolio` apareceu no catálogo de skills disponível ao Codex,
+confirmando seu reconhecimento pelo ambiente.
 
 ## Como usar e verificar a configuração
 
@@ -56,9 +61,13 @@ Registre quais verificações foram executadas e o que ainda falta conferir.
 ```
 
 O nome da skill deve aparecer entre as skills disponíveis. Caso não apareça,
-reinicie a sessão do Codex e confirme o diretório do projeto. Esse procedimento
-de descoberta ainda precisa ser confirmado na interface do aluno. A validação
-estrutural do arquivo é diferente da confirmação de que a interface o carregou.
+reinicie a sessão do Codex e confirme o diretório do projeto. Seu reconhecimento
+no catálogo do Codex foi confirmado nesta conversa; para a apresentação, o
+aluno deve conseguir localizá-la e explicar o fluxo. A validação estrutural
+do arquivo é diferente da confirmação de descoberta pelo ambiente.
+
+A documentação e as instruções foram publicadas no GitHub e integradas em
+`main` pelo [PR #3](https://github.com/kobaxzs/cp3-portifolio/pull/3).
 
 O fluxo esperado é: pedido concreto do aluno, leitura das instruções, alteração
 na pasta responsável, revisão do diff, validação e commit em branch própria.

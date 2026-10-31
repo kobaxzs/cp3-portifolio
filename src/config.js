@@ -1,14 +1,16 @@
-export const profile = {
-  name: 'Lucas Figueiredo Kobayashi',
-  shortName: 'Lucas Kobayashi',
-  github: import.meta.env.VITE_GITHUB_USERNAME || 'kobaxzs',
-  email: import.meta.env.VITE_CONTACT_EMAIL || 'lucasfkobayashi19@gmail.com',
-  linkedin: import.meta.env.VITE_LINKEDIN_URL || '',
-};
+import { normalizarVariaveisAmbiente } from './utils/ambiente.js';
 
-export const supabaseConfig = {
-  url: import.meta.env.VITE_SUPABASE_URL || '',
-  key: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
-};
+const variaveisAmbiente = normalizarVariaveisAmbiente(import.meta.env);
 
-export const hasBackend = Boolean(supabaseConfig.url && supabaseConfig.key);
+export const perfil = {
+  nome: 'Lucas Figueiredo Kobayashi',
+  nomeCurto: 'Lucas Kobayashi',
+  usuarioGithub: variaveisAmbiente.VITE_USUARIO_GITHUB || 'kobaxzs',
+  email: variaveisAmbiente.VITE_EMAIL_CONTATO || 'lucasfkobayashi19@gmail.com',
+  linkedin: variaveisAmbiente.VITE_URL_LINKEDIN || '',
+};
+export const configuracaoSupabase = {
+  url: variaveisAmbiente.VITE_URL_SUPABASE || '',
+  chave: variaveisAmbiente.VITE_CHAVE_PUBLICA_SUPABASE || '',
+};
+export const temConfiguracaoBanco = Boolean(configuracaoSupabase.url && configuracaoSupabase.chave);

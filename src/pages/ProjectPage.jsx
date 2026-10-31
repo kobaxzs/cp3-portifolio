@@ -1,69 +1,72 @@
-import { Link, useParams } from 'react-router';
-import useAsyncData from '../hooks/useAsyncData.js';
-import { getRepositories, safeExternalUrl } from '../services/github.js';
-import { EmptyState, ErrorState, LoadingState } from '../components/Feedback.jsx';
-import { ProjectArt } from '../components/ProjectCard.jsx';
-import Icon from '../components/Icon.jsx';
-
-export default function ProjectPage() {
-  const { name } = useParams();
-  const { data: repos, loading, error, retry } = useAsyncData(getRepositories);
-  if (loading)
+import { Link as LinkInterno, useParams as useParametros } from 'react-router';
+import useDados from '../hooks/useAsyncData.js';
+import { obterRepositorios, validarUrlExterna } from '../services/github.js';
+import { EstadoVazio, EstadoErro, EstadoCarregamento } from '../components/Feedback.jsx';
+import { ArteProjeto } from '../components/ProjectCard.jsx';
+import Icone from '../components/Icon.jsx';
+export default function PaginaProjeto() {
+  const { name: nome } = useParametros();
+  const { dados: repositorios, carregando, erro, tentarNovamente } = useDados(obterRepositorios);
+  if (carregando)
     return (
       <div className="container section">
-        <LoadingState text="Carregando detalhes do projeto…" />
+        <EstadoCarregamento texto="Carregando detalhes do projeto…" />
       </div>
     );
-  if (error)
+  if (erro)
     return (
       <div className="container section">
-        <ErrorState message={error} onRetry={retry} />
+        <EstadoErro mensagem={erro} aoTentarNovamente={tentarNovamente} />
       </div>
     );
-  const repo = repos.find((item) => item.name === name);
-  if (!repo)
+  const repositorio = repositorios.find((item) => item.name === nome);
+  if (!repositorio)
     return (
       <div className="container section">
-        <EmptyState title="Projeto não encontrado">
+        <EstadoVazio titulo="Projeto não encontrado">
           Este repositório pode ter sido renomeado, removido ou tornado privado.
-        </EmptyState>
-        <Link to="/projetos" className="button">
+        </EstadoVazio>
+        <LinkInterno to="/projetos" className="button">
           Voltar aos projetos
-        </Link>
+        </LinkInterno>
       </div>
     );
-  const liveUrl = safeExternalUrl(repo.homepage);
-
+  const urlPublicada = validarUrlExterna(repositorio.homepage);
   return (
     <article className="container page section">
-      <Link to="/projetos" className="text-link back-link">
+      <LinkInterno to="/projetos" className="text-link back-link">
         ← Todos os projetos
-      </Link>
+      </LinkInterno>
       <div className="project-detail-heading">
         <div>
-          <p className="eyebrow">DO MEU GITHUB / {repo.language || 'REPOSITÓRIO'}</p>
+          <p className="eyebrow">DO MEU GITHUB / {repositorio.language || 'REPOSITÓRIO'}</p>
           <h1>
-            {repo.name.replaceAll('-', ' ')}
+            {repositorio.name.replaceAll('-', ' ')}
             <span className="accent">.</span>
           </h1>
           <p className="lead">
-            {repo.description ||
+            {repositorio.description ||
               'O autor ainda não adicionou uma descrição a este repositório no GitHub.'}
           </p>
         </div>
         <div className="detail-actions">
-          <a href={repo.html_url} target="_blank" rel="noreferrer" className="button">
-            <Icon name="github" />
-            Ver código <Icon name="arrow" size={16} />
+          <a href={repositorio.html_url} target="_blank" rel="noreferrer" className="button">
+            <Icone nome="github" />
+            Ver código <Icone nome="seta" tamanho={16} />
           </a>
-          {liveUrl && (
-            <a href={liveUrl} target="_blank" rel="noreferrer" className="button button-outline">
-              Abrir projeto <Icon name="arrow" size={16} />
+          {urlPublicada && (
+            <a
+              href={urlPublicada}
+              target="_blank"
+              rel="noreferrer"
+              className="button button-outline"
+            >
+              Abrir projeto <Icone nome="seta" tamanho={16} />
             </a>
           )}
         </div>
       </div>
-      <ProjectArt repo={repo} index={repos.indexOf(repo)} large />
+      <ArteProjeto repositorio={repositorio} indice={repositorios.indexOf(repositorio)} grande />
       <div className="detail-grid">
         <section>
           <p className="eyebrow">SOBRE O REPOSITÓRIO</p>
@@ -73,9 +76,9 @@ export default function ProjectPage() {
             histórico de desenvolvimento e o README com as instruções disponíveis.
           </p>
           <div className="tag-list">
-            {(repo.topics || []).map((topic) => (
-              <span className="tag" key={topic}>
-                {topic}
+            {(repositorio.topics || []).map((topico) => (
+              <span className="tag" key={topico}>
+                {topico}
               </span>
             ))}
           </div>
@@ -83,25 +86,25 @@ export default function ProjectPage() {
         <dl className="repo-facts">
           <div>
             <dt>Linguagem principal</dt>
-            <dd>{repo.language || 'Não informada'}</dd>
+            <dd>{repositorio.language || 'Não informada'}</dd>
           </div>
           <div>
             <dt>Criado em</dt>
-            <dd>{new Date(repo.created_at).toLocaleDateString('pt-BR')}</dd>
+            <dd>{new Date(repositorio.created_at).toLocaleDateString('pt-BR')}</dd>
           </div>
           <div>
             <dt>Última atualização</dt>
-            <dd>{new Date(repo.updated_at).toLocaleDateString('pt-BR')}</dd>
+            <dd>{new Date(repositorio.updated_at).toLocaleDateString('pt-BR')}</dd>
           </div>
           <div>
             <dt>Estrelas / Forks</dt>
             <dd>
-              {repo.stargazers_count} / {repo.forks_count}
+              {repositorio.stargazers_count} / {repositorio.forks_count}
             </dd>
           </div>
           <div>
             <dt>Licença</dt>
-            <dd>{repo.license?.name || 'Não informada'}</dd>
+            <dd>{repositorio.license?.name || 'Não informada'}</dd>
           </div>
         </dl>
       </div>

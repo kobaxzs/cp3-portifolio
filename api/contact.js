@@ -1,7 +1,6 @@
-import { handleContact } from '../server/contact.js';
-
+import { tratarContato } from '../server/contact.js';
 export default {
-  fetch(request) {
-    return handleContact(request);
+  fetch(solicitacao) {
+    return tratarContato(solicitacao);
   },
 };

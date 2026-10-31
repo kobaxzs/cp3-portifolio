@@ -1,13 +1,11 @@
-import useAsyncData from '../hooks/useAsyncData.js';
-import { getRepositories } from '../services/github.js';
-import ProjectCard from '../components/ProjectCard.jsx';
-import { EmptyState, ErrorState, ProjectSkeletons } from '../components/Feedback.jsx';
-import { profile } from '../config.js';
-import Icon from '../components/Icon.jsx';
-
-export default function ProjectsPage() {
-  const { data: repos, loading, error, retry } = useAsyncData(getRepositories);
-
+import useDados from '../hooks/useAsyncData.js';
+import { obterRepositorios } from '../services/github.js';
+import CardProjeto from '../components/ProjectCard.jsx';
+import { EstadoVazio, EstadoErro, EsqueletosProjetos } from '../components/Feedback.jsx';
+import { perfil } from '../config.js';
+import Icone from '../components/Icon.jsx';
+export default function PaginaProjetos() {
+  const { dados: repositorios, carregando, erro, tentarNovamente } = useDados(obterRepositorios);
   return (
     <div className="container page section">
       <div className="page-heading">
@@ -23,27 +21,27 @@ export default function ProjectsPage() {
         </p>
         <a
           className="text-link"
-          href={`https://github.com/${profile.github}`}
+          href={`https://github.com/${perfil.usuarioGithub}`}
           target="_blank"
           rel="noreferrer"
         >
-          Visitar meu GitHub <Icon name="arrow" size={17} />
+          Visitar meu GitHub <Icone nome="seta" tamanho={17} />
         </a>
       </div>
-      {loading ? (
-        <ProjectSkeletons count={6} />
-      ) : error ? (
-        <ErrorState message={error} onRetry={retry} />
-      ) : repos.length ? (
+      {carregando ? (
+        <EsqueletosProjetos quantidade={6} />
+      ) : erro ? (
+        <EstadoErro mensagem={erro} aoTentarNovamente={tentarNovamente} />
+      ) : repositorios.length ? (
         <div className="project-grid">
-          {repos.map((repo, index) => (
-            <ProjectCard repo={repo} index={index} key={repo.id} />
+          {repositorios.map((repositorio, indice) => (
+            <CardProjeto repositorio={repositorio} indice={indice} key={repositorio.id} />
           ))}
         </div>
       ) : (
-        <EmptyState title="Ainda não há projetos públicos">
+        <EstadoVazio titulo="Ainda não há projetos públicos">
           Os repositórios aparecerão aqui quando forem publicados no GitHub.
-        </EmptyState>
+        </EstadoVazio>
       )}
       <p className="source-note">
         Fonte: API pública do GitHub · Repositórios próprios, ordenados pela última atualização.
