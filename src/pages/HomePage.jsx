@@ -132,13 +132,12 @@ export default function HomePage() {
       <div className="tech-strip">
         <div className="container tech-strip-inner">
           <span>NA MINHA JORNADA</span>
-          <strong>JavaScript</strong>
-          <span className="strip-star">✳</span>
-          <strong>React</strong>
-          <span className="strip-star">✳</span>
-          <strong>HTML & CSS</strong>
-          <span className="strip-star">✳</span>
-          <strong>Git & GitHub</strong>
+          {['JavaScript', 'React', 'HTML & CSS', 'Git & GitHub'].map((skill, index) => (
+            <span className="tech-strip-item" key={skill}>
+              {index > 0 && <Icon name="asterisk" className="strip-star" />}
+              <strong>{skill}</strong>
+            </span>
+          ))}
         </div>
       </div>
       <section className="container section">

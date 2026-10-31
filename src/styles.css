@@ -549,7 +549,17 @@ h1 > span {
   font-size: 0.93rem;
   font-weight: 500;
 }
+.tech-strip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 24px;
+  white-space: nowrap;
+}
 .strip-star {
+  display: block;
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
   color: var(--accent);
   font-size: 0.9rem;
 }
@@ -1486,6 +1496,9 @@ textarea[aria-invalid='true'] {
     width: 100%;
     text-align: center;
   }
+  .tech-strip-item {
+    gap: 14px;
+  }
   .tech-strip strong {
     font-size: 0.82rem;
   }
@@ -1684,6 +1697,9 @@ textarea[aria-invalid='true'] {
     font-size: 0.5rem;
   }
   .tech-strip-inner {
+    gap: 13px;
+  }
+  .tech-strip-item {
     gap: 13px;
   }
   .tech-strip strong {
