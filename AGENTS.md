@@ -1,8 +1,18 @@
 # Instruções para IA — Portfólio CP3
 
-Este projeto é um portfólio individual de Lucas Kobayashi. Faça mudanças que o
-aluno consiga explicar. Consulte o README para executar o projeto e
-`docs/harness-ia.md` para o registro do uso da IA e das ferramentas.
+Este arquivo orienta o apoio técnico ao portfólio de Lucas Kobayashi.
+Consulte o README para conhecer a estrutura e executar o projeto.
+
+## Escopo do apoio
+
+- Ajude com dúvidas, revisão de código, diagnóstico de erros e configurações
+  solicitadas, especialmente banco de dados, autenticação e integrações.
+- Trabalhe no problema apresentado. Explique a solução e faça as alterações
+  necessárias dentro desse escopo, preservando o restante da implementação.
+- Em SQL, explique a finalidade das tabelas, relações, permissões e políticas.
+  Indique como executar e verificar a consulta.
+- Apresente o motivo das decisões e as limitações relevantes, para permitir
+  que o responsável pelo projeto revise a solução.
 
 ## Arquitetura e código
 
@@ -14,7 +24,10 @@ aluno consiga explicar. Consulte o README para executar o projeto e
 - Mantenha a entrada de produção em `api/contact.js` e a lógica de contato em
   `server/contact.js`. O servidor local do Vite reutiliza essa lógica.
 - Use PascalCase em componentes, prefixo `use` em hooks e camelCase em funções
-  e variáveis. Siga ESLint e Prettier existentes.
+  e variáveis. Escreva os identificadores próprios em português, sem acentos,
+  com nomes diretos, como `dados`, `repositorio` e `carregarPainel`.
+  Preserve os nomes exigidos por bibliotecas, APIs, HTML e pelo banco.
+  Siga ESLint e Prettier existentes.
 - Preserve labels, foco, feedback por campo e estados de carregamento, erro e
   lista vazia ao alterar interfaces com dados. No contato, bloqueie duplicidade
   de envio e mantenha o texto preenchido se a requisição falhar.
@@ -45,16 +58,15 @@ aluno consiga explicar. Consulte o README para executar o projeto e
 - Em mudanças de aplicação, execute `npm.cmd run check` antes da entrega.
   Para alterações apenas em Markdown, `npm.cmd run format:check` é suficiente.
   O hook `.husky/pre-commit` executa lint e formatação; não o ignore.
-- Ao preparar ou revisar uma entrega, consulte a skill
+- Ao receber um pedido de revisão da entrega, consulte a skill
   `.agents/skills/revisar-portfolio/SKILL.md`. Aproveite resultados válidos já
   obtidos sobre o mesmo diff, sem repetir verificações sem motivo.
-- Atualize o README com evidência: diferencie teste local simulado, consulta
-  HTTP/API de produção e confirmação manual do aluno. HTTP 200 de uma SPA não
-  comprova layout, login, redirecionamento ou renderização da página 404.
+- Ao documentar uma verificação, diferencie teste local simulado, consulta
+  HTTP/API de produção e confirmação manual. HTTP 200 de uma SPA não comprova
+  layout, login, redirecionamento ou renderização da página 404.
 
 ## Comunicação
 
-Responda em português com o resultado, os arquivos relevantes, a verificação
-executada e o que ainda falta. Documente limitações e falhas sem atribuir uso
-de modelos, skills, MCPs ou subagentes que não aconteceu. A gravação e a revisão
-do vídeo ficam para o final, conforme preferência do aluno.
+Responda em português, com explicações diretas e exemplos quando ajudarem.
+Informe o que foi alterado, como conferir o resultado e as limitações encontradas.
+Registre apenas verificações executadas e ferramentas realmente utilizadas.
