@@ -124,9 +124,7 @@ export default function HomePage() {
               Da ideia ao primeiro commit.<small>O aprendizado acontece construindo.</small>
             </div>
           </div>
-          <span className="visual-cross" aria-hidden="true">
-            ✳
-          </span>
+          <Icon name="asterisk" className="visual-cross" />
         </div>
       </section>
       <div className="tech-strip">
