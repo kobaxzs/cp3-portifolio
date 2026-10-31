@@ -1,180 +1,141 @@
 # Portfólio — Lucas Kobayashi
 
-Portfólio de Lucas Figueiredo Kobayashi para o CP3 da FIAP.
-GitHub: [kobaxzs](https://github.com/kobaxzs).
-Site publicado: [cp3-portifolio.vercel.app](https://cp3-portifolio.vercel.app).
-Contato: [lucasfkobayashi19@gmail.com](mailto:lucasfkobayashi19@gmail.com).
+Portfólio de Lucas Figueiredo Kobayashi, estudante de Engenharia de Software na
+FIAP, desenvolvido para o CP3 de Stack e Harness Engineering.
 
-## Executar
+- [Site publicado](https://cp3-portifolio.vercel.app)
+- [Repositório no GitHub](https://github.com/kobaxzs/cp3-portifolio)
 
-Use Node.js 22.12 ou superior. No terminal da pasta:
+## Funcionalidades
+
+- Projetos obtidos pela API do GitHub, com cards e páginas individuais.
+- Navegação com página 404 e estados de carregamento, erro e lista vazia.
+- Formulário com validação por campo, armazenamento da mensagem e notificação por e-mail.
+- Painel protegido para consultar mensagens, marcar respostas e selecionar destaques.
+- Tema claro e escuro persistente e layout responsivo.
+- Imagens SVG com carregamento adiado, painel sob demanda e cache das consultas ao GitHub.
+
+## Tecnologias
+
+React, React Router, Vite, JavaScript e CSS puro. Supabase fornece autenticação
+e banco PostgreSQL com políticas RLS. Resend envia as notificações por e-mail.
+O deploy é feito na Vercel. A validação usa Vitest, Testing Library, ESLint,
+Prettier e Husky.
+
+## Instalação e execução
+
+Requer Node.js 22.12 ou superior. Na pasta do projeto:
 
 ```powershell
 npm.cmd install
 npm.cmd run dev
 ```
 
-Abra o endereço informado pelo Vite, normalmente **http://localhost:5173**.
-Para encerrar, pressione **Ctrl + C**. As páginas públicas e a consulta ao GitHub
-funcionam sem configurar Supabase ou Resend.
+Abra o endereço informado no terminal. As páginas públicas e os projetos do
+GitHub funcionam sem Supabase e Resend. O formulário e o painel dependem da
+configuração abaixo.
+
+## Variáveis de ambiente
+
+Copie `.env.example` para `.env` e preencha os valores. Reinicie o servidor
+local após alterar o arquivo.
+
+| Variável                      | Finalidade                                            |
+| ----------------------------- | ----------------------------------------------------- |
+| `VITE_USUARIO_GITHUB`         | Usuário de quem serão consultados os repositórios.    |
+| `VITE_EMAIL_CONTATO`          | E-mail público exibido no site.                       |
+| `VITE_URL_LINKEDIN`           | Link opcional do perfil no LinkedIn.                  |
+| `VITE_URL_SUPABASE`           | URL pública do projeto Supabase.                      |
+| `VITE_CHAVE_PUBLICA_SUPABASE` | Chave pública do Supabase.                            |
+| `URL_SUPABASE`                | URL do Supabase usada pelo servidor.                  |
+| `CHAVE_SECRETA_SUPABASE`      | Chave privada do Supabase, usada somente no servidor. |
+| `CHAVE_API_RESEND`            | Chave privada de envio do Resend.                     |
+| `EMAIL_REMETENTE_CONTATO`     | Remetente autorizado no Resend.                       |
+| `EMAIL_DESTINATARIO_CONTATO`  | E-mail que recebe as notificações.                    |
+
+Variáveis `VITE_` são públicas. As chaves privadas ficam somente no servidor.
+O `.env` é ignorado pelo Git. `src/utils/ambiente.js` também aceita os nomes
+anteriores em inglês; valores preenchidos com nomes em português têm preferência.
+
+### Supabase
+
+1. Execute [supabase/schema.sql](supabase/schema.sql) no SQL Editor do projeto.
+2. Crie a conta do proprietário em Authentication, desative o cadastro público
+   e configure as URLs de autenticação para os endereços local e publicado.
+3. Copie o UUID da conta e autorize o acesso:
+
+   ```sql
+   insert into public.portfolio_owners (id)
+   values ('UUID-REAL-DO-USUARIO');
+   ```
+
+As políticas RLS restringem mensagens e alterações à conta autorizada. Os
+destaques selecionados podem ser consultados publicamente.
+
+### Resend e contato
+
+Configure a chave de API, o remetente autorizado e o destinatário. A rota
+`/api/contact` salva a mensagem antes de solicitar o envio do e-mail. Se o envio
+falhar, informa que a mensagem ficou salva. A resposta ao visitante é feita pelo
+aplicativo de e-mail, e a marcação como respondida no painel é manual.
+
+Em desenvolvimento, `npm.cmd run dev` disponibiliza essa rota pelo servidor
+do Vite. Em produção, ela é executada pela Vercel. `npm.cmd run preview` serve
+somente o build estático e não executa a API.
+
+## Testes e build
 
 ```powershell
 npm.cmd test              # testes automatizados
 npm.cmd run check         # lint, formatação, testes e build
-npm.cmd run format        # formatação
-npm.cmd run build         # gera dist para publicação
-npm.cmd run preview       # visualiza o build gerado
+npm.cmd run format        # aplica a formatação
+npm.cmd run build         # gera os arquivos em dist
+npm.cmd run preview       # visualiza o build estático
 ```
 
-O envio do formulário usa `/api/contact`, executado pela Vercel em produção.
-Localmente, `npm.cmd run dev` disponibiliza a mesma lógica pelo servidor do Vite,
-usando as variáveis do `.env` somente no servidor para acessar Supabase e Resend.
-Reinicie o servidor após alterar essas variáveis. O comando `npm.cmd run preview`
-serve apenas os arquivos estáticos e não executa a API.
-
-## Tecnologias e funcionalidades
-
-React, React Router, Vite, JavaScript e CSS puro. Projetos vêm da API do GitHub,
-com descrição, linguagem, atualização e links individuais. Há estados de
-carregamento, erro e vazio, página 404, formulário validado, tema persistente e
-layout responsivo. As artes dos cards são ilustrações SVG.
-
-O dashboard usa Supabase Auth e banco com regras RLS para restringir mensagens
-e alterações ao dono. Permite marcar mensagens como respondidas e escolher os
-destaques da home. A função de contato salva a mensagem antes de solicitar o
-envio de e-mail pelo Resend. Se o e-mail falhar, informa o salvamento parcial.
-Esses fluxos dependem da configuração dos serviços.
-
-O painel é carregado com `React.lazy` e `Suspense`. Imagens leves usam
-`loading="lazy"` e dimensões reservadas. A consulta ao GitHub é reutilizada
-durante a navegação na mesma aba; atualizar a página renova os dados.
-
-Vitest e Testing Library cobrem, entre outros casos, a validação do formulário
-e o bloqueio do dashboard sem login. As integrações externas são simuladas nos
-testes e precisam ser verificadas com as contas reais.
-
-## Configuração dos serviços
-
-Copie `.env.example` para `.env` e preencha os valores. Reinicie o Vite depois.
-
-As variáveis do projeto usam nomes em português. A função
-`normalizarVariaveisAmbiente`, em `src/utils/ambiente.js`, também aceita os nomes
-anteriores em inglês para manter a compatibilidade com o deploy já configurado.
-Quando os dois nomes existem, o valor com nome em português tem preferência.
-
-### Supabase
-
-1. Crie o projeto e execute `supabase/schema.sql` no SQL Editor.
-2. Em Authentication, crie a conta do dono, desative o cadastro público e copie
-   o UUID do usuário.
-3. Autorize essa conta:
-
-   ```sql
-   insert into public.portfolio_owners (id) values ('UUID-REAL-DO-USUARIO');
-   ```
-
-4. Preencha `VITE_URL_SUPABASE` e `VITE_CHAVE_PUBLICA_SUPABASE`.
-5. No servidor, preencha `URL_SUPABASE` e `CHAVE_SECRETA_SUPABASE`.
-6. Configure as URLs de Authentication para o endereço usado pelo site.
-
-### Resend
-
-Preencha `CHAVE_API_RESEND`, `EMAIL_REMETENTE_CONTATO` com um remetente autorizado e
-`EMAIL_DESTINATARIO_CONTATO` com o destinatário. A resposta ao visitante é feita pelo seu
-aplicativo de e-mail; a marcação como respondida no painel é manual.
-
-As chaves privadas ficam somente no servidor. Variáveis com prefixo `VITE_`
-são públicas. Nunca publique `.env`.
+Os testes cobrem validação do formulário, proteção do painel, estados de dados,
+rotas e integrações simuladas. O acesso ao banco pode ser verificado com
+[supabase/test-access.sql](supabase/test-access.sql), que desfaz os dados de teste
+ao final com `ROLLBACK`.
 
 ## Organização e padrões
 
 ```text
-src/components/   componentes visuais e proteção de rota
-src/pages/        páginas públicas e dashboard
+src/components/   componentes reutilizáveis e proteção de rota
+src/pages/        páginas públicas e painel
 src/services/     integrações com APIs
-src/hooks/        carregamento e contexto de autenticação
-src/utils/        validação compartilhada
+src/hooks/        autenticação e carregamento de dados
+src/utils/        validação e configuração compartilhadas
 src/test/         configuração dos testes
-api/              entrada da função na Vercel
-server/           lógica do contato e testes
-supabase/         tabelas e permissões do banco
+api/              entrada da função de contato na Vercel
+server/           lógica de contato e adaptador local
+supabase/         schema e teste de permissões
 public/           imagens e arquivos estáticos
-docs/             decisões técnicas, uso da IA e evidências de verificação
-.agents/skills/   procedimento reutilizável de revisão para o Codex
+docs/             decisões técnicas e documentação da IA
+.agents/skills/   skill de revisão do projeto
 ```
 
-Componentes em PascalCase, hooks com prefixo `use`, funções e variáveis em
-camelCase. Os identificadores próprios são escritos em português, sem acentos,
-como `repositorio`, `carregando` e `obterMensagens`. Nomes das APIs, atributos
-HTML, métodos das bibliotecas e campos do banco preservam seus contratos.
-Chamadas às APIs ficam nos serviços, separadas dos componentes visuais.
+Componentes usam PascalCase; hooks têm prefixo `use`; funções e variáveis usam
+camelCase. Os identificadores próprios são escritos em português, sem acentos.
+Nomes exigidos pelas bibliotecas, APIs, HTML e banco mantêm seus contratos.
+Chamadas às APIs ficam nos serviços, separadas da apresentação.
 
-Use branches `feature/nome`, `fix/nome` ou `docs/nome` e commits com `feat:`, `fix:`, `docs:`,
-`style:` ou `test:`. Integre em `main` por pull request, registrando o histórico
-real. Após inicializar o Git, execute `npm.cmd run prepare`: o hook Husky confere
-lint e formatação antes dos commits.
+Use branches `feature/nome`, `fix/nome` ou `docs/nome`, com integração em `main`
+por pull request. Os commits usam `feat:`, `fix:`, `docs:`, `style:` ou `test:`,
+seguidos de uma descrição da alteração. O hook `.husky/pre-commit` verifica lint
+e formatação; `npm.cmd run prepare` configura o Husky no repositório local.
 
-Supabase atende ao login e armazenamento; Resend permite enviar e-mail sem expor
-a chave no navegador. O cache simples dispensa uma biblioteca adicional.
-SVG é adequado às ilustrações vetoriais. Vitest e Testing Library atendem aos
-testes exigidos, e ESLint, Prettier e Husky à padronização antes dos commits.
+## Publicação
 
-## Instruções para IA e decisões de engenharia
+Importe o repositório na Vercel com a branch de produção `main`, preset Vite,
+build `npm run build` e diretório de saída `dist`. Cadastre as variáveis do
+`.env` nas configurações do projeto. O arquivo `vercel.json` define o build e
+o encaminhamento das rotas da aplicação. Integrações na branch principal
+iniciam um novo deploy automaticamente.
 
-O [AGENTS.md](AGENTS.md) define os padrões que a IA deve seguir neste repositório:
-responsabilidades das pastas, nomenclatura, validação, branches e commits.
-A [skill de revisão](.agents/skills/revisar-portfolio/SKILL.md) organiza a
-conferência da entrega e os diferentes tipos de evidência.
+## Documentação da IA e decisões técnicas
 
-O [registro do harness e do uso da IA](docs/harness-ia.md) descreve a ferramenta,
-a identificação do modelo informada pelo aluno, os recursos realmente usados
-e as limitações. As [decisões técnicas](docs/decisoes-tecnicas.md) comparam
-alternativas, critérios e limitações da stack e mostram o fluxo de dados.
-
-## Pendências para concluir e entregar
-
-As verificações de HTTP, API e banco feitas na produção em 31/10/2026 estão
-registradas em [Verificação da publicação](docs/verificacao-publicacao.md),
-com os resultados e as verificações visuais que ainda faltam.
-
-- [x] Configurar Supabase, tabelas, conta do dono, URLs e variáveis de ambiente.
-- [x] Testar login, saída, redirecionamento de visitantes e bloqueio de contas
-      sem autorização, inclusive nas permissões do banco.
-- [x] Conferir login e saída no site publicado, novo pedido de login após sair
-      e carregamento das mensagens e dos destaques salvos.
-- [ ] Conferir carregamento, erro e listas vazias do painel com o serviço real.
-- [x] Configurar Resend e fazer um envio real, confirmando recebimento do e-mail
-      e a mesma mensagem no dashboard.
-- [x] Conferir bloqueio do botão com “Enviando…” durante o envio.
-- [x] Conferir confirmação de sucesso após o envio.
-- [x] Conferir aviso de mensagem salva com falha no e-mail e confirmar a mensagem no painel.
-- [ ] Conferir spinner e erro no envio.
-- [x] Marcar uma mensagem como respondida e conferir a persistência.
-- [x] Selecionar destaques e conferir a home em outra janela.
-- [x] Disponibilizar o Git, inicializar o repositório, ativar o hook e publicar
-      no GitHub com commits e branches reais, sem `.env` nem arquivos gerados.
-- [x] Importar na Vercel: branch `main`, build `npm run build`, saída `dist` e
-      variáveis de ambiente. Confirmar deploy automático após um push real.
-- [ ] Na URL pública, conferir menu, cards, formulário e painel em celular e
-      desktop, sem cortes ou rolagem horizontal.
-- [ ] Confirmar no site publicado que o tema escolhido permanece após atualizar
-      a página e voltar ao site.
-- [x] Abrir diretamente o link de um projeto, atualizar o navegador e conferir
-      a página 404 no site publicado.
-- [ ] Conferir falhas da API do GitHub e os dados dos repositórios na interface.
-- [x] Medir Lighthouse mobile na URL pública: desempenho 100, acessibilidade 100,
-      práticas recomendadas 100, SEO 100 e CLS 0 (relatório de 31/10/2026).
-- [x] Conferir no código imagens adiadas e painel sob demanda; confirmar em teste
-      o reaproveitamento das consultas ao GitHub entre páginas.
-- [x] Preparar instruções para IA, skill de revisão, registro do harness e
-      comparação das decisões técnicas conforme o resumo do enunciado.
-- [x] Confirmar o reconhecimento da skill pelo Codex e publicar as instruções
-      e a documentação no GitHub (PR #3 integrado).
-- [x] Registrar GPT-5.6 Luna como modelo do ChatGPT gratuito informado pelo aluno.
-- [ ] Conferir o modelo selecionado no Codex e explicar a escolha das ferramentas
-      na apresentação.
-- [ ] Preparar e gravar o vídeo de até oito minutos, com rosto e tela visíveis,
-      explicando arquitetura, escolhas técnicas e uso real da IA. Publicar no
-      YouTube como não listado.
-- [ ] Entregar os links do GitHub, Vercel e vídeo no Teams, conforme o prazo de
-      03/11 informado no enunciado recebido.
+- [AGENTS.md](AGENTS.md): instruções de apoio técnico e padrões do projeto.
+- [Skill de revisão](.agents/skills/revisar-portfolio/SKILL.md): procedimento de validação.
+- [Harness e uso da IA](docs/harness-ia.md): ferramentas utilizadas e limites das verificações.
+- [Decisões técnicas](docs/decisoes-tecnicas.md): alternativas, critérios e fluxo de dados.
