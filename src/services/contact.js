@@ -1,18 +1,20 @@
-export async function sendContact(values) {
-  const response = await fetch('/api/contact', {
+export async function enviarContato(valores) {
+  const resposta = await fetch('/api/contact', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(values),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(valores),
   });
-  let result;
+  let resultado;
   try {
-    result = await response.json();
+    resultado = await resposta.json();
   } catch {
     throw new Error(
       'O serviço de contato não está disponível. Você também pode escrever diretamente para o meu e-mail.',
     );
   }
-  if (!response.ok)
-    throw new Error(result.error || 'Não foi possível enviar. Tente novamente mais tarde.');
-  return result;
+  if (!resposta.ok)
+    throw new Error(resultado.error || 'Não foi possível enviar. Tente novamente mais tarde.');
+  return resultado;
 }

@@ -1,8 +1,7 @@
-import { profile } from '../config.js';
-import ContactForm from '../components/ContactForm.jsx';
-import Icon from '../components/Icon.jsx';
-
-export default function ContactPage() {
+import { perfil } from '../config.js';
+import FormularioContato from '../components/ContactForm.jsx';
+import Icone from '../components/Icon.jsx';
+export default function PaginaContato() {
   return (
     <div className="container page section">
       <div className="page-heading">
@@ -18,44 +17,44 @@ export default function ContactPage() {
       </div>
       <div className="contact-layout">
         <aside className="contact-aside">
-          <Icon name="asterisk" className="contact-asterisk" />
+          <Icone nome="asterisco" className="contact-asterisk" />
           <h2>Vamos conversar.</h2>
           <p>
             Prefere um contato direto?
             <br />
             Você também me encontra por aqui.
           </p>
-          <a className="contact-channel" href={`mailto:${profile.email}`}>
-            <Icon name="mail" />
+          <a className="contact-channel" href={`mailto:${perfil.email}`}>
+            <Icone nome="email" />
             <span>
               <small>E-MAIL</small>
-              {profile.email}
+              {perfil.email}
             </span>
-            <Icon name="arrow" size={17} />
+            <Icone nome="seta" tamanho={17} />
           </a>
           <a
             className="contact-channel"
-            href={`https://github.com/${profile.github}`}
+            href={`https://github.com/${perfil.usuarioGithub}`}
             target="_blank"
             rel="noreferrer"
           >
-            <Icon name="github" />
+            <Icone nome="github" />
             <span>
-              <small>GITHUB</small>@{profile.github}
+              <small>GITHUB</small>@{perfil.usuarioGithub}
             </span>
-            <Icon name="arrow" size={17} />
+            <Icone nome="seta" tamanho={17} />
           </a>
-          {profile.linkedin && (
-            <a className="contact-channel" href={profile.linkedin} target="_blank" rel="noreferrer">
+          {perfil.linkedin && (
+            <a className="contact-channel" href={perfil.linkedin} target="_blank" rel="noreferrer">
               <span>in</span>
               <span>
                 <small>LINKEDIN</small>Meu perfil profissional
               </span>
-              <Icon name="arrow" size={17} />
+              <Icone nome="seta" tamanho={17} />
             </a>
           )}
         </aside>
-        <ContactForm />
+        <FormularioContato />
       </div>
     </div>
   );

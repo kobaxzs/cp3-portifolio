@@ -1,71 +1,79 @@
-import { useRef, useState } from 'react';
-import { validateContact } from '../utils/validation.js';
-import { sendContact } from '../services/contact.js';
-import Icon from './Icon.jsx';
-
-const initialValues = { name: '', email: '', subject: '', message: '' };
-
-export default function ContactForm() {
-  const [values, setValues] = useState(initialValues);
-  const [errors, setErrors] = useState({});
-  const [sending, setSending] = useState(false);
-  const [feedback, setFeedback] = useState(null);
-  const formRef = useRef(null);
-  const busyRef = useRef(false);
-
-  function change(event) {
-    const { name, value } = event.target;
-    setValues({ ...values, [name]: value });
-    setErrors({ ...errors, [name]: '' });
-    setFeedback(null);
+import { useRef as useReferencia, useState as useEstado } from 'react';
+import { validarContato } from '../utils/validation.js';
+import { enviarContato } from '../services/contact.js';
+import Icone from './Icon.jsx';
+const valoresIniciais = {
+  name: '',
+  email: '',
+  subject: '',
+  message: '',
+};
+export default function FormularioContato() {
+  const [valores, definirValores] = useEstado(valoresIniciais);
+  const [errosCampos, definirErros] = useEstado({});
+  const [enviando, definirEnviando] = useEstado(false);
+  const [retorno, definirRetorno] = useEstado(null);
+  const referenciaFormulario = useReferencia(null);
+  const referenciaEnvio = useReferencia(false);
+  function alterarCampo(evento) {
+    const { name: nome, value: valor } = evento.target;
+    definirValores({
+      ...valores,
+      [nome]: valor,
+    });
+    definirErros({
+      ...errosCampos,
+      [nome]: '',
+    });
+    definirRetorno(null);
   }
-
-  async function submit(event) {
-    event.preventDefault();
-    if (busyRef.current) return;
-    const nextErrors = validateContact(values);
-    setErrors(nextErrors);
-    for (const field of ['name', 'email', 'subject', 'message']) {
-      if (nextErrors[field]) {
-        formRef.current.elements[field].focus();
+  async function enviarFormulario(evento) {
+    evento.preventDefault();
+    if (referenciaEnvio.current) return;
+    const novosErros = validarContato(valores);
+    definirErros(novosErros);
+    for (const campo of ['name', 'email', 'subject', 'message']) {
+      if (novosErros[campo]) {
+        referenciaFormulario.current.elements[campo].focus();
         return;
       }
     }
-    busyRef.current = true;
-    setSending(true);
-    setFeedback(null);
+    referenciaEnvio.current = true;
+    definirEnviando(true);
+    definirRetorno(null);
     try {
-      const result = await sendContact(values);
-      setValues(initialValues);
-      setFeedback({
-        type: result.emailSent ? 'success' : 'warning',
-        text: result.emailSent
+      const resultado = await enviarContato(valores);
+      definirValores(valoresIniciais);
+      definirRetorno({
+        tipo: resultado.emailSent ? 'success' : 'warning',
+        texto: resultado.emailSent
           ? 'Mensagem recebida! Ela foi salva e a notificação foi enviada ao meu e-mail.'
           : 'Sua mensagem foi salva no meu painel. A notificação por e-mail está pendente; não é necessário reenviar.',
       });
-    } catch (error) {
-      setFeedback({ type: 'error', text: error.message });
+    } catch (erro) {
+      definirRetorno({
+        tipo: 'error',
+        texto: erro.message,
+      });
     } finally {
-      busyRef.current = false;
-      setSending(false);
+      referenciaEnvio.current = false;
+      definirEnviando(false);
     }
   }
-
-  function fieldProps(name) {
+  function propriedadesCampo(nome) {
     return {
-      name,
-      id: name,
-      value: values[name],
-      onChange: change,
-      'aria-invalid': Boolean(errors[name]),
-      'aria-describedby': errors[name] ? `${name}-error` : undefined,
+      name: nome,
+      id: nome,
+      value: valores[nome],
+      onChange: alterarCampo,
+      'aria-invalid': Boolean(errosCampos[nome]),
+      'aria-describedby': errosCampos[nome] ? `${nome}-error` : undefined,
     };
   }
-
   return (
     <form
-      ref={formRef}
-      onSubmit={submit}
+      ref={referenciaFormulario}
+      onSubmit={enviarFormulario}
       noValidate
       className="contact-form"
       aria-label="Formulário de contato"
@@ -76,15 +84,15 @@ export default function ContactForm() {
             Seu nome <span>*</span>
           </label>
           <input
-            {...fieldProps('name')}
+            {...propriedadesCampo('name')}
             autoComplete="name"
             maxLength={80}
             placeholder="Como posso te chamar?"
             required
           />
-          {errors.name && (
+          {errosCampos.name && (
             <p className="field-error" id="name-error">
-              {errors.name}
+              {errosCampos.name}
             </p>
           )}
         </div>
@@ -93,16 +101,16 @@ export default function ContactForm() {
             Seu e-mail <span>*</span>
           </label>
           <input
-            {...fieldProps('email')}
+            {...propriedadesCampo('email')}
             type="email"
             autoComplete="email"
             maxLength={254}
             placeholder="voce@exemplo.com"
             required
           />
-          {errors.email && (
+          {errosCampos.email && (
             <p className="field-error" id="email-error">
-              {errors.email}
+              {errosCampos.email}
             </p>
           )}
         </div>
@@ -111,16 +119,16 @@ export default function ContactForm() {
         <label htmlFor="subject">
           Sobre o que vamos conversar? <span>*</span>
         </label>
-        <select {...fieldProps('subject')} required>
+        <select {...propriedadesCampo('subject')} required>
           <option value="">Selecione um assunto</option>
           <option>Uma oportunidade</option>
           <option>Um projeto ou colaboração</option>
           <option>Uma troca de ideias</option>
           <option>Outro assunto</option>
         </select>
-        {errors.subject && (
+        {errosCampos.subject && (
           <p className="field-error" id="subject-error">
-            {errors.subject}
+            {errosCampos.subject}
           </p>
         )}
       </div>
@@ -129,28 +137,28 @@ export default function ContactForm() {
           Sua mensagem <span>*</span>
         </label>
         <textarea
-          {...fieldProps('message')}
+          {...propriedadesCampo('message')}
           rows={6}
           minLength={20}
           maxLength={5000}
           placeholder="Me conte um pouco sobre sua ideia…"
           required
         />
-        {errors.message && (
+        {errosCampos.message && (
           <p className="field-error" id="message-error">
-            {errors.message}
+            {errosCampos.message}
           </p>
         )}
         <span className="field-hint">
-          Mínimo de 20 caracteres · {values.message.trim().length}/5.000
+          Mínimo de 20 caracteres · {valores.message.trim().length}/5.000
         </span>
       </div>
-      {feedback && (
+      {retorno && (
         <p
-          className={`form-feedback ${feedback.type}`}
-          role={feedback.type === 'error' ? 'alert' : 'status'}
+          className={`form-feedback ${retorno.tipo}`}
+          role={retorno.tipo === 'error' ? 'alert' : 'status'}
         >
-          {feedback.text}
+          {retorno.texto}
         </p>
       )}
       <div className="form-bottom">
@@ -159,15 +167,15 @@ export default function ContactForm() {
           <br />
           responder a esta conversa.
         </span>
-        <button type="submit" className="button" disabled={sending}>
-          {sending ? (
+        <button type="submit" className="button" disabled={enviando}>
+          {enviando ? (
             <>
               <span className="spinner" />
               Enviando…
             </>
           ) : (
             <>
-              Enviar mensagem <Icon name="arrow" size={18} />
+              Enviar mensagem <Icone nome="seta" tamanho={18} />
             </>
           )}
         </button>

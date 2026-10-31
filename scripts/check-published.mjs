@@ -1,41 +1,51 @@
-import { readFile } from 'node:fs/promises';
-
+import { readFile as lerArquivo } from 'node:fs/promises';
+import { normalizarVariaveisAmbiente } from '../src/utils/ambiente.js';
 const base = 'https://cp3-portifolio.vercel.app';
-const checks = [];
-const record = (name, ok, detail = '') => {
-  checks.push({ name, ok, detail });
-  console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? `: ${detail}` : ''}`);
+const verificacoes = [];
+const registrar = (nome, correto, detalhe = '') => {
+  verificacoes.push({
+    nome,
+    correto,
+    detalhe,
+  });
+  console.log(`${correto ? 'PASS' : 'FAIL'} ${nome}${detalhe ? `: ${detalhe}` : ''}`);
 };
-const request = (url, options = {}) =>
-  fetch(url, { ...options, signal: AbortSignal.timeout(25000) });
-const env = Object.fromEntries(
-  (await readFile(new URL('../.env', import.meta.url), 'utf8'))
-    .split(/\r?\n/)
-    .filter((line) => /^[A-Z_]+=/.test(line))
-    .map((line) => {
-      const split = line.indexOf('=');
-      return [
-        line.slice(0, split),
-        line
-          .slice(split + 1)
-          .trim()
-          .replace(/^(['"])(.*)\1$/, '$2'),
-      ];
-    }),
+const solicitacao = (url, opcoes = {}) =>
+  fetch(url, {
+    ...opcoes,
+    signal: AbortSignal.timeout(25000),
+  });
+const ambiente = normalizarVariaveisAmbiente(
+  Object.fromEntries(
+    (await lerArquivo(new URL('../.env', import.meta.url), 'utf8'))
+      .split(/\r?\n/)
+      .filter((linha) => /^[A-Z_]+=/.test(linha))
+      .map((linha) => {
+        const posicaoIgual = linha.indexOf('=');
+        return [
+          linha.slice(0, posicaoIgual),
+          linha
+            .slice(posicaoIgual + 1)
+            .trim()
+            .replace(/^(['"])(.*)\1$/, '$2'),
+        ];
+      }),
+  ),
 );
-
-const home = await request(base);
-const html = await home.text();
-record('Home publicada', home.status === 200 && html.includes('id="root"'));
-record(
+const paginaInicial = await solicitacao(base);
+const htmlPagina = await paginaInicial.text();
+registrar('Home publicada', paginaInicial.status === 200 && htmlPagina.includes('id="root"'));
+registrar(
   'Headers de segurança',
-  home.headers.get('x-content-type-options') === 'nosniff' &&
-    home.headers.get('x-frame-options') === 'DENY' &&
-    Boolean(home.headers.get('strict-transport-security')),
+  paginaInicial.headers.get('x-content-type-options') === 'nosniff' &&
+    paginaInicial.headers.get('x-frame-options') === 'DENY' &&
+    Boolean(paginaInicial.headers.get('strict-transport-security')),
 );
-record('Idioma e viewport', html.includes('lang="pt-BR"') && html.includes('name="viewport"'));
-
-const paths = [
+registrar(
+  'Idioma e viewport',
+  htmlPagina.includes('lang="pt-BR"') && htmlPagina.includes('name="viewport"'),
+);
+const caminhos = [
   '/sobre',
   '/projetos',
   '/projetos/cp3-portifolio',
@@ -45,160 +55,208 @@ const paths = [
   '/pagina-inexistente-auditoria',
 ];
 await Promise.all(
-  paths.map(async (path) => {
-    const response = await request(base + path);
-    record(
-      `Acesso direto ${path}`,
-      response.status === 200 && (await response.text()) === html,
+  caminhos.map(async (caminho) => {
+    const resposta = await solicitacao(base + caminho);
+    registrar(
+      `Acesso direto ${caminho}`,
+      resposta.status === 200 && (await resposta.text()) === htmlPagina,
       'retorna o HTML da SPA; renderização e redirecionamento exigem navegador',
     );
   }),
 );
-
-const assets = new Map();
-const queue = [...html.matchAll(/(?:src|href)="([^"?#]+\.(?:js|css|svg))"/g)].map(
-  (match) => new URL(match[1], base).href,
+const arquivosEstaticos = new Map();
+const fila = [...htmlPagina.matchAll(/(?:src|href)="([^"?#]+\.(?:js|css|svg))"/g)].map(
+  (correspondencia) => new URL(correspondencia[1], base).href,
 );
-while (queue.length) {
-  const url = queue.shift();
-  if (assets.has(url) || !url.startsWith(base + '/')) continue;
-  const response = await request(url);
-  const content = await response.text();
-  assets.set(url, content);
-  record(
+while (fila.length) {
+  const url = fila.shift();
+  if (arquivosEstaticos.has(url) || !url.startsWith(base + '/')) continue;
+  const resposta = await solicitacao(url);
+  const conteudoArquivo = await resposta.text();
+  arquivosEstaticos.set(url, conteudoArquivo);
+  registrar(
     `Arquivo ${new URL(url).pathname}`,
-    response.status === 200 && !content.startsWith('<!doctype html>'),
+    resposta.status === 200 && !conteudoArquivo.startsWith('<!doctype html>'),
   );
   if (url.endsWith('.js')) {
-    for (const match of content.matchAll(
+    for (const correspondencia of conteudoArquivo.matchAll(
       /["'`]((?:\.?\/)?(?:assets\/)?[\w-]+\.(?:js|css))["'`]/g,
     )) {
-      queue.push(new URL(match[1].startsWith('assets/') ? '/' + match[1] : match[1], url).href);
+      fila.push(
+        new URL(
+          correspondencia[1].startsWith('assets/') ? '/' + correspondencia[1] : correspondencia[1],
+          url,
+        ).href,
+      );
     }
   }
 }
-const clientCode = [...assets.values()].join('\n');
-for (const key of ['SUPABASE_SECRET_KEY', 'RESEND_API_KEY']) {
-  const secret = env[key];
-  record(
-    `Chave privada ${key} ausente nos arquivos públicos`,
-    Boolean(secret && secret.length >= 16) && !clientCode.includes(secret),
+const codigoCliente = [...arquivosEstaticos.values()].join('\n');
+for (const chave of ['CHAVE_SECRETA_SUPABASE', 'CHAVE_API_RESEND']) {
+  const segredo = ambiente[chave];
+  registrar(
+    `Chave privada ${chave} ausente nos arquivos públicos`,
+    Boolean(segredo && segredo.length >= 16) && !codigoCliente.includes(segredo),
   );
 }
-for (const path of ['/.env', '/.env.example']) {
-  const response = await request(base + path);
-  const content = await response.text();
-  record(
-    `Configuração privada não exposta em ${path}`,
-    !/^(?:VITE_SUPABASE|SUPABASE_SECRET_KEY|RESEND_API_KEY)=/m.test(content) &&
-      !Object.values(env)
+for (const caminho of ['/.env', '/.env.example']) {
+  const resposta = await solicitacao(base + caminho);
+  const conteudoArquivo = await resposta.text();
+  registrar(
+    `Configuração privada não exposta em ${caminho}`,
+    !/^(?:VITE_(?:SUPABASE|URL_SUPABASE|CHAVE_PUBLICA_SUPABASE)|SUPABASE_SECRET_KEY|RESEND_API_KEY|CHAVE_SECRETA_SUPABASE|CHAVE_API_RESEND)=/m.test(
+      conteudoArquivo,
+    ) &&
+      !Object.values(ambiente)
         .filter(
-          (value) =>
-            value.length >= 20 && (value.startsWith('sb_secret_') || value.startsWith('re_')),
+          (valor) =>
+            valor.length >= 20 && (valor.startsWith('sb_secret_') || valor.startsWith('re_')),
         )
-        .some((value) => content.includes(value)),
+        .some((valor) => conteudoArquivo.includes(valor)),
   );
 }
-
-const post = async (body) => {
-  const response = await request(base + '/api/contact', {
+const enviarRequisicao = async (corpo) => {
+  const resposta = await solicitacao(base + '/api/contact', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: typeof body === 'string' ? body : JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: typeof corpo === 'string' ? corpo : JSON.stringify(corpo),
   });
-  let result;
+  let resultado;
   try {
-    result = await response.json();
+    resultado = await resposta.json();
   } catch {
-    result = { error: 'Resposta não é JSON.' };
+    resultado = {
+      error: 'Resposta não é JSON.',
+    };
   }
-  return { status: response.status, result };
+  return {
+    codigoStatus: resposta.status,
+    resultado,
+  };
 };
-const getContact = await request(base + '/api/contact');
-record('API rejeita GET', getContact.status === 405);
-const valid = {
+const consultaContato = await solicitacao(base + '/api/contact');
+registrar('API rejeita GET', consultaContato.status === 405);
+const valido = {
   name: 'Teste de publicação',
   email: 'teste@example.com',
   subject: 'Teste técnico',
   message: 'Mensagem de teste técnico para conferir a publicação do portfólio.',
 };
-for (const [name, body, field] of [
+for (const [nome, corpo, campo] of [
   ['JSON inválido', '{', null],
   ['Campos vazios', {}, 'name'],
-  ['E-mail inválido', { ...valid, email: 'email-invalido' }, 'email'],
-  ['Mensagem curta', { ...valid, message: 'curta' }, 'message'],
-  ['Mensagem longa', { ...valid, message: 'a'.repeat(5001) }, 'message'],
+  [
+    'E-mail inválido',
+    {
+      ...valido,
+      email: 'email-invalido',
+    },
+    'email',
+  ],
+  [
+    'Mensagem curta',
+    {
+      ...valido,
+      message: 'curta',
+    },
+    'message',
+  ],
+  [
+    'Mensagem longa',
+    {
+      ...valido,
+      message: 'a'.repeat(5001),
+    },
+    'message',
+  ],
 ]) {
-  const { status, result } = await post(body);
-  record(
-    `API valida ${name}`,
-    status === 400 && (!field || Boolean(result.fields?.[field])),
-    `HTTP ${status}`,
+  const { codigoStatus, resultado } = await enviarRequisicao(corpo);
+  registrar(
+    `API valida ${nome}`,
+    codigoStatus === 400 && (!campo || Boolean(resultado.fields?.[campo])),
+    `HTTP ${codigoStatus}`,
   );
 }
-
-const github = await request(
+const respostaGithub = await solicitacao(
   'https://api.github.com/users/kobaxzs/repos?sort=updated&per_page=100',
-  { headers: { Accept: 'application/vnd.github+json' } },
+  {
+    headers: {
+      Accept: 'application/vnd.github+json',
+    },
+  },
 );
-const repos = await github.json();
-record(
+const repositorios = await respostaGithub.json();
+registrar(
   'GitHub disponível',
-  github.status === 200 && Array.isArray(repos),
-  Array.isArray(repos)
-    ? `${repos.filter((repo) => !repo.fork).length} repositórios próprios`
-    : `HTTP ${github.status}`,
+  respostaGithub.status === 200 && Array.isArray(repositorios),
+  Array.isArray(repositorios)
+    ? `${repositorios.filter((repositorio) => !repositorio.fork).length} repositórios próprios`
+    : `HTTP ${respostaGithub.status}`,
 );
-
-const publicConfigMatches =
-  clientCode.includes(env.VITE_SUPABASE_URL) &&
-  clientCode.includes(env.VITE_SUPABASE_PUBLISHABLE_KEY);
-record('Supabase publicado corresponde à configuração local', publicConfigMatches);
-if (publicConfigMatches) {
-  for (const [table, column, allowed] of [
+const configuracaoPublicaConfere =
+  codigoCliente.includes(ambiente.VITE_URL_SUPABASE) &&
+  codigoCliente.includes(ambiente.VITE_CHAVE_PUBLICA_SUPABASE);
+registrar('Supabase publicado corresponde à configuração local', configuracaoPublicaConfere);
+if (configuracaoPublicaConfere) {
+  for (const [tabela, coluna, permitido] of [
     ['featured_projects', 'repo_name', true],
     ['messages', 'id', false],
     ['portfolio_owners', 'id', false],
   ]) {
-    const response = await request(
-      `${env.VITE_SUPABASE_URL}/rest/v1/${table}?select=${column}&limit=1`,
-      { headers: { apikey: env.VITE_SUPABASE_PUBLISHABLE_KEY } },
+    const resposta = await solicitacao(
+      `${ambiente.VITE_URL_SUPABASE}/rest/v1/${tabela}?select=${coluna}&limit=1`,
+      {
+        headers: {
+          apikey: ambiente.VITE_CHAVE_PUBLICA_SUPABASE,
+        },
+      },
     );
-    record(
-      `Acesso anônimo a ${table}`,
-      allowed ? response.status === 200 : [401, 403].includes(response.status),
-      `HTTP ${response.status}; ${allowed ? 'leitura pública esperada' : 'bloqueio esperado'}`,
+    registrar(
+      `Acesso anônimo a ${tabela}`,
+      permitido ? resposta.status === 200 : [401, 403].includes(resposta.status),
+      `HTTP ${resposta.status}; ${permitido ? 'leitura pública esperada' : 'bloqueio esperado'}`,
     );
   }
 }
-
 if (process.argv.includes('--send-test')) {
-  const subject = 'Teste produção ' + new Date().toISOString();
-  const { status, result } = await post({ ...valid, subject });
-  record(
+  const assunto = 'Teste produção ' + new Date().toISOString();
+  const { codigoStatus, resultado } = await enviarRequisicao({
+    ...valido,
+    subject: assunto,
+  });
+  registrar(
     'Envio real na produção',
-    status === 201 && result.saved === true && result.emailSent === true,
-    `HTTP ${status}; salva=${result.saved === true}; provedor aceitou e-mail=${result.emailSent === true}`,
+    codigoStatus === 201 && resultado.saved === true && resultado.emailSent === true,
+    `HTTP ${codigoStatus}; salva=${resultado.saved === true}; provedor aceitou e-mail=${resultado.emailSent === true}`,
   );
-  console.log(`Identificação da mensagem: ${subject}`);
-  if (result.saved && publicConfigMatches) {
-    const params = new URLSearchParams({ select: 'id,email_sent', subject: 'eq.' + subject });
-    const response = await request(`${env.SUPABASE_URL}/rest/v1/messages?${params}`, {
-      headers: { apikey: env.SUPABASE_SECRET_KEY },
+  console.log(`Identificação da mensagem: ${assunto}`);
+  if (resultado.saved && configuracaoPublicaConfere) {
+    const parametros = new URLSearchParams({
+      select: 'id,email_sent',
+      subject: 'eq.' + assunto,
     });
-    const rows = await response.json();
-    record(
+    const resposta = await solicitacao(`${ambiente.URL_SUPABASE}/rest/v1/messages?${parametros}`, {
+      headers: {
+        apikey: ambiente.CHAVE_SECRETA_SUPABASE,
+      },
+    });
+    const registros = await resposta.json();
+    registrar(
       'Mensagem real persistida no banco',
-      response.ok && Array.isArray(rows) && rows.length === 1 && rows[0].email_sent === true,
-      `HTTP ${response.status}`,
+      resposta.ok &&
+        Array.isArray(registros) &&
+        registros.length === 1 &&
+        registros[0].email_sent === true,
+      `HTTP ${resposta.status}`,
     );
   }
 }
-
 console.log(
-  `Resultado: ${checks.filter((check) => check.ok).length}/${checks.length} verificações passaram.`,
+  `Resultado: ${verificacoes.filter((verificacao) => verificacao.correto).length}/${verificacoes.length} verificações passaram.`,
 );
 console.log(
   'Não verificado: layout, interações React, login autenticado, inbox, Lighthouse e deploy automático.',
 );
-process.exitCode = checks.some((check) => !check.ok) ? 1 : 0;
+process.exitCode = verificacoes.some((verificacao) => !verificacao.correto) ? 1 : 0;

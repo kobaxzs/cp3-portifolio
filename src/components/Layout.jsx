@@ -1,36 +1,36 @@
-import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router';
-import { profile } from '../config.js';
-import Icon from './Icon.jsx';
-
-function getInitialTheme() {
+import { useEffect as useEfeito, useState as useEstado } from 'react';
+import {
+  Link as LinkInterno,
+  NavLink as LinkNavegacao,
+  Outlet as ConteudoRota,
+  useLocation as useLocalizacao,
+} from 'react-router';
+import { perfil } from '../config.js';
+import Icone from './Icon.jsx';
+function obterTemaInicial() {
   try {
     return localStorage.getItem('portfolio-theme') === 'dark' ? 'dark' : 'light';
   } catch {
     return 'light';
   }
 }
-
-export default function Layout() {
-  const [theme, setTheme] = useState(getInitialTheme);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const location = useLocation();
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
+export default function EstruturaPagina() {
+  const [tema, definirTema] = useEstado(obterTemaInicial);
+  const [menuAberto, definirMenuAberto] = useEstado(false);
+  const localizacao = useLocalizacao();
+  useEfeito(() => {
+    document.documentElement.dataset.theme = tema;
     try {
-      localStorage.setItem('portfolio-theme', theme);
+      localStorage.setItem('portfolio-theme', tema);
     } catch {
       /* O tema continua funcionando sem armazenamento. */
     }
-  }, [theme]);
-
-  useEffect(() => {
-    setMenuOpen(false);
+  }, [tema]);
+  useEfeito(() => {
+    definirMenuAberto(false);
     window.scrollTo(0, 0);
-    document.title = `${location.pathname === '/' ? 'Início' : location.pathname.split('/')[1]} — ${profile.shortName}`;
-  }, [location.pathname]);
-
+    document.title = `${localizacao.pathname === '/' ? 'Início' : localizacao.pathname.split('/')[1]} — ${perfil.nomeCurto}`;
+  }, [localizacao.pathname]);
   return (
     <>
       <a href="#conteudo" className="skip-link">
@@ -38,7 +38,7 @@ export default function Layout() {
       </a>
       <header className="header">
         <div className="container header-inner">
-          <Link to="/" className="brand" aria-label="Lucas Kobayashi, início">
+          <LinkInterno to="/" className="brand" aria-label="Lucas Kobayashi, início">
             <span className="brand-mark">
               lk<span>.</span>
             </span>
@@ -47,55 +47,55 @@ export default function Layout() {
               <br />
               Kobayashi
             </span>
-          </Link>
+          </LinkInterno>
           <nav
             aria-label="Navegação principal"
-            className={menuOpen ? 'nav is-open' : 'nav'}
+            className={menuAberto ? 'nav is-open' : 'nav'}
             id="main-nav"
           >
-            <NavLink to="/" end>
+            <LinkNavegacao to="/" end>
               Início
-            </NavLink>
-            <NavLink to="/projetos">Projetos</NavLink>
-            <NavLink to="/sobre">Sobre</NavLink>
-            <NavLink to="/contato">
-              Contato <Icon name="arrow" size={15} />
-            </NavLink>
+            </LinkNavegacao>
+            <LinkNavegacao to="/projetos">Projetos</LinkNavegacao>
+            <LinkNavegacao to="/sobre">Sobre</LinkNavegacao>
+            <LinkNavegacao to="/contato">
+              Contato <Icone nome="seta" tamanho={15} />
+            </LinkNavegacao>
           </nav>
           <div className="header-actions">
             <button
               className="icon-button theme-toggle"
-              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              aria-label={theme === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
+              onClick={() => definirTema(tema === 'light' ? 'dark' : 'light')}
+              aria-label={tema === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
             >
-              <Icon name={theme === 'light' ? 'moon' : 'sun'} />
+              <Icone nome={tema === 'light' ? 'lua' : 'sol'} />
             </button>
             <button
               className="icon-button menu-toggle"
               aria-controls="main-nav"
-              aria-expanded={menuOpen}
-              aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
-              onClick={() => setMenuOpen(!menuOpen)}
+              aria-expanded={menuAberto}
+              aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
+              onClick={() => definirMenuAberto(!menuAberto)}
             >
-              <Icon name={menuOpen ? 'close' : 'menu'} />
+              <Icone nome={menuAberto ? 'fechar' : 'menu'} />
             </button>
           </div>
         </div>
       </header>
       <main id="conteudo" className="main" tabIndex={-1}>
-        <Outlet />
+        <ConteudoRota />
       </main>
       <footer className="footer">
         <div className="container footer-inner">
-          <Link to="/" className="footer-signature">
+          <LinkInterno to="/" className="footer-signature">
             Lucas Kobayashi<span>© {new Date().getFullYear()}</span>
-          </Link>
+          </LinkInterno>
           <p>Feito com React, curiosidade e café.</p>
           <div className="footer-links">
-            <a href={`https://github.com/${profile.github}`} target="_blank" rel="noreferrer">
-              GitHub <Icon name="arrow" size={14} />
+            <a href={`https://github.com/${perfil.usuarioGithub}`} target="_blank" rel="noreferrer">
+              GitHub <Icone nome="seta" tamanho={14} />
             </a>
-            <Link to="/login">Área do proprietário</Link>
+            <LinkInterno to="/login">Área do proprietário</LinkInterno>
           </div>
         </div>
       </footer>

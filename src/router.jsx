@@ -1,46 +1,65 @@
-import { lazy, Suspense } from 'react';
-import { createBrowserRouter } from 'react-router';
-import Layout from './components/Layout.jsx';
-import HomePage from './pages/HomePage.jsx';
-import ProjectsPage from './pages/ProjectsPage.jsx';
-import ProjectPage from './pages/ProjectPage.jsx';
-import AboutPage from './pages/AboutPage.jsx';
-import ContactPage from './pages/ContactPage.jsx';
-import NotFoundPage from './pages/NotFoundPage.jsx';
-import RouteError from './pages/RouteError.jsx';
-import { LoadingState } from './components/Feedback.jsx';
+import { lazy as carregarSobDemanda, Suspense as AguardarCarregamento } from 'react';
+import { createBrowserRouter as criarRotasNavegador } from 'react-router';
+import EstruturaPagina from './components/Layout.jsx';
+import PaginaInicial from './pages/HomePage.jsx';
+import PaginaProjetos from './pages/ProjectsPage.jsx';
+import PaginaProjeto from './pages/ProjectPage.jsx';
+import PaginaSobre from './pages/AboutPage.jsx';
+import PaginaContato from './pages/ContactPage.jsx';
+import PaginaNaoEncontrada from './pages/NotFoundPage.jsx';
+import ErroRota from './pages/RouteError.jsx';
+import { EstadoCarregamento } from './components/Feedback.jsx';
 
 // O import dinâmico mantém autenticação e painel fora do pacote inicial.
-const AdminArea = lazy(() => import('./pages/admin/AdminArea.jsx'));
-
-export const router = createBrowserRouter([
+const AreaAdministrativa = carregarSobDemanda(() => import('./pages/admin/AdminArea.jsx'));
+export const rotas = criarRotasNavegador([
   {
     path: '/',
-    element: <Layout />,
-    errorElement: <RouteError />,
+    element: <EstruturaPagina />,
+    errorElement: <ErroRota />,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'projetos', element: <ProjectsPage /> },
-      { path: 'projetos/:name', element: <ProjectPage /> },
-      { path: 'sobre', element: <AboutPage /> },
-      { path: 'contato', element: <ContactPage /> },
+      {
+        index: true,
+        element: <PaginaInicial />,
+      },
+      {
+        path: 'projetos',
+        element: <PaginaProjetos />,
+      },
+      {
+        path: 'projetos/:name',
+        element: <PaginaProjeto />,
+      },
+      {
+        path: 'sobre',
+        element: <PaginaSobre />,
+      },
+      {
+        path: 'contato',
+        element: <PaginaContato />,
+      },
       {
         path: 'login',
         element: (
-          <Suspense fallback={<LoadingState text="Carregando acesso do proprietário…" />}>
-            <AdminArea />
-          </Suspense>
+          <AguardarCarregamento
+            fallback={<EstadoCarregamento texto="Carregando acesso do proprietário…" />}
+          >
+            <AreaAdministrativa />
+          </AguardarCarregamento>
         ),
       },
       {
         path: 'dashboard',
         element: (
-          <Suspense fallback={<LoadingState text="Carregando painel…" />}>
-            <AdminArea dashboard />
-          </Suspense>
+          <AguardarCarregamento fallback={<EstadoCarregamento texto="Carregando painel…" />}>
+            <AreaAdministrativa painel />
+          </AguardarCarregamento>
         ),
       },
-      { path: '*', element: <NotFoundPage /> },
+      {
+        path: '*',
+        element: <PaginaNaoEncontrada />,
+      },
     ],
   },
 ]);

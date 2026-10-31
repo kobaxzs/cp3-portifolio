@@ -1,28 +1,36 @@
-import { hasBackend, supabaseConfig } from '../config.js';
-
-let pending;
-let cached;
-
-export function clearFeaturedCache() {
-  cached = undefined;
+import { temConfiguracaoBanco, configuracaoSupabase } from '../config.js';
+let consultaPendente;
+let dadosGuardados;
+export function limparCacheDestaques() {
+  dadosGuardados = undefined;
 }
-
-export function getFeaturedProjects() {
-  if (!hasBackend) return Promise.resolve({ configured: false, names: [] });
-  if (cached) return Promise.resolve(cached);
-  if (pending) return pending;
-  pending = fetch(
-    `${supabaseConfig.url}/rest/v1/featured_projects?select=repo_name&order=created_at.asc`,
-    { headers: { apikey: supabaseConfig.key } },
+export function obterProjetosDestaque() {
+  if (!temConfiguracaoBanco)
+    return Promise.resolve({
+      configurado: false,
+      nomes: [],
+    });
+  if (dadosGuardados) return Promise.resolve(dadosGuardados);
+  if (consultaPendente) return consultaPendente;
+  consultaPendente = fetch(
+    `${configuracaoSupabase.url}/rest/v1/featured_projects?select=repo_name&order=created_at.asc`,
+    {
+      headers: {
+        apikey: configuracaoSupabase.chave,
+      },
+    },
   )
-    .then(async (response) => {
-      if (!response.ok) throw new Error('Não foi possível consultar os destaques.');
-      const rows = await response.json();
-      cached = { configured: true, names: rows.map((row) => row.repo_name) };
-      return cached;
+    .then(async (resposta) => {
+      if (!resposta.ok) throw new Error('Não foi possível consultar os destaques.');
+      const registros = await resposta.json();
+      dadosGuardados = {
+        configurado: true,
+        nomes: registros.map((registro) => registro.repo_name),
+      };
+      return dadosGuardados;
     })
     .finally(() => {
-      pending = null;
+      consultaPendente = null;
     });
-  return pending;
+  return consultaPendente;
 }

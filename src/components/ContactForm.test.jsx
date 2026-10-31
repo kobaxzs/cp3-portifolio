@@ -1,65 +1,97 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
-import ContactForm from './ContactForm.jsx';
-
-async function fillForm() {
-  const user = userEvent.setup();
-  await user.type(screen.getByLabelText(/seu nome/i), 'Pessoa de teste');
-  await user.type(screen.getByLabelText(/seu e-mail/i), 'pessoa@example.com');
-  await user.selectOptions(screen.getByLabelText(/sobre o que/i), 'Uma troca de ideias');
-  await user.type(
-    screen.getByLabelText(/sua mensagem/i),
+import {
+  fireEvent as dispararEvento,
+  render as renderizar,
+  screen as tela,
+  waitFor as aguardar,
+} from '@testing-library/react';
+import eventosUsuario from '@testing-library/user-event';
+import { describe as descrever, expect as esperar, it as teste, vi } from 'vitest';
+import FormularioContato from './ContactForm.jsx';
+async function preencherFormulario() {
+  const usuario = eventosUsuario.setup();
+  await usuario.type(tela.getByLabelText(/seu nome/i), 'Pessoa de teste');
+  await usuario.type(tela.getByLabelText(/seu e-mail/i), 'pessoa@example.com');
+  await usuario.selectOptions(tela.getByLabelText(/sobre o que/i), 'Uma troca de ideias');
+  await usuario.type(
+    tela.getByLabelText(/sua mensagem/i),
     'Mensagem válida para testar o envio do formulário.',
   );
-  return user;
+  return usuario;
 }
-
-describe('formulário de contato', () => {
-  it('mostra erros específicos, foca o primeiro campo e não envia dados inválidos', async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
-    render(<ContactForm />);
-    await userEvent.click(screen.getByRole('button', { name: /enviar mensagem/i }));
-    expect(screen.getByText(/informe um nome entre/i)).toBeInTheDocument();
-    expect(screen.getByText(/informe um e-mail válido/i)).toBeInTheDocument();
-    expect(screen.getByText(/escreva uma mensagem entre/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/seu nome/i)).toHaveFocus();
-    expect(fetchMock).not.toHaveBeenCalled();
+descrever('formulário de contato', () => {
+  teste('mostra erros específicos, foca o primeiro campo e não envia dados inválidos', async () => {
+    const buscaSimulada = vi.fn();
+    vi.stubGlobal('fetch', buscaSimulada);
+    renderizar(<FormularioContato />);
+    await eventosUsuario.click(
+      tela.getByRole('button', {
+        name: /enviar mensagem/i,
+      }),
+    );
+    esperar(tela.getByText(/informe um nome entre/i)).toBeInTheDocument();
+    esperar(tela.getByText(/informe um e-mail válido/i)).toBeInTheDocument();
+    esperar(tela.getByText(/escreva uma mensagem entre/i)).toBeInTheDocument();
+    esperar(tela.getByLabelText(/seu nome/i)).toHaveFocus();
+    esperar(buscaSimulada).not.toHaveBeenCalled();
   });
-  it('bloqueia duplicidade durante o envio e só confirma a resposta do servidor', async () => {
-    let finish;
-    const fetchMock = vi.fn(
+  teste('bloqueia duplicidade durante o envio e só confirma a resposta do servidor', async () => {
+    let concluir;
+    const buscaSimulada = vi.fn(
       () =>
-        new Promise((resolve) => {
-          finish = resolve;
+        new Promise((resolver) => {
+          concluir = resolver;
         }),
     );
-    vi.stubGlobal('fetch', fetchMock);
-    render(<ContactForm />);
-    const user = await fillForm();
-    await user.click(screen.getByRole('button', { name: /enviar mensagem/i }));
-    expect(screen.getByRole('button', { name: /enviando/i })).toBeDisabled();
-    fireEvent.submit(screen.getByRole('form'));
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    finish({ ok: true, json: async () => ({ saved: true, emailSent: true }) });
-    expect(await screen.findByRole('status')).toHaveTextContent('Mensagem recebida');
-    expect(screen.getByLabelText(/sua mensagem/i)).toHaveValue('');
+    vi.stubGlobal('fetch', buscaSimulada);
+    renderizar(<FormularioContato />);
+    const usuario = await preencherFormulario();
+    await usuario.click(
+      tela.getByRole('button', {
+        name: /enviar mensagem/i,
+      }),
+    );
+    esperar(
+      tela.getByRole('button', {
+        name: /enviando/i,
+      }),
+    ).toBeDisabled();
+    dispararEvento.submit(tela.getByRole('form'));
+    esperar(buscaSimulada).toHaveBeenCalledTimes(1);
+    concluir({
+      ok: true,
+      json: async () => ({
+        saved: true,
+        emailSent: true,
+      }),
+    });
+    esperar(await tela.findByRole('status')).toHaveTextContent('Mensagem recebida');
+    esperar(tela.getByLabelText(/sua mensagem/i)).toHaveValue('');
   });
-  it('mantém o texto se o servidor falhar', async () => {
+  teste('mantém o texto se o servidor falhar', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue({ ok: false, json: async () => ({ error: 'Serviço indisponível.' }) }),
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({
+          error: 'Serviço indisponível.',
+        }),
+      }),
     );
-    render(<ContactForm />);
-    const user = await fillForm();
-    await user.click(screen.getByRole('button', { name: /enviar mensagem/i }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Serviço indisponível.');
-    expect(screen.getByLabelText(/sua mensagem/i)).not.toHaveValue('');
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: /enviar mensagem/i })).toBeEnabled(),
+    renderizar(<FormularioContato />);
+    const usuario = await preencherFormulario();
+    await usuario.click(
+      tela.getByRole('button', {
+        name: /enviar mensagem/i,
+      }),
+    );
+    esperar(await tela.findByRole('alert')).toHaveTextContent('Serviço indisponível.');
+    esperar(tela.getByLabelText(/sua mensagem/i)).not.toHaveValue('');
+    await aguardar(() =>
+      esperar(
+        tela.getByRole('button', {
+          name: /enviar mensagem/i,
+        }),
+      ).toBeEnabled(),
     );
   });
 });

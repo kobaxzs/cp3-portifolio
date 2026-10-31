@@ -1,34 +1,43 @@
-import { normalizeContact, validateContact } from '../src/utils/validation.js';
-
-function json(body, status = 200) {
-  return Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
-}
-
-async function databaseRequest(env, path, body, method = 'POST') {
-  return fetch(`${env.SUPABASE_URL}/rest/v1/${path}`, {
-    method,
+import { normalizarContato, validarContato } from '../src/utils/validation.js';
+import { normalizarVariaveisAmbiente } from '../src/utils/ambiente.js';
+function responderJson(corpo, codigoStatus = 200) {
+  return Response.json(corpo, {
+    status: codigoStatus,
     headers: {
-      apikey: env.SUPABASE_SECRET_KEY,
+      'Cache-Control': 'no-store',
+    },
+  });
+}
+async function consultarBanco(ambiente, caminho, corpo, metodo = 'POST') {
+  return fetch(`${ambiente.URL_SUPABASE}/rest/v1/${caminho}`, {
+    method: metodo,
+    headers: {
+      apikey: ambiente.CHAVE_SECRETA_SUPABASE,
       'Content-Type': 'application/json',
       Prefer: 'return=representation',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(corpo),
   });
 }
-
-export async function handleContact(request, env = process.env) {
-  if (request.method !== 'POST') return json({ error: 'Método não permitido.' }, 405);
-
-  const required = [
-    'SUPABASE_URL',
-    'SUPABASE_SECRET_KEY',
-    'RESEND_API_KEY',
-    'CONTACT_TO_EMAIL',
-    'CONTACT_FROM_EMAIL',
+export async function tratarContato(solicitacao, ambiente = process.env) {
+  ambiente = normalizarVariaveisAmbiente(ambiente);
+  if (solicitacao.method !== 'POST')
+    return responderJson(
+      {
+        error: 'Método não permitido.',
+      },
+      405,
+    );
+  const obrigatorias = [
+    'URL_SUPABASE',
+    'CHAVE_SECRETA_SUPABASE',
+    'CHAVE_API_RESEND',
+    'EMAIL_DESTINATARIO_CONTATO',
+    'EMAIL_REMETENTE_CONTATO',
   ];
-  for (const key of required) {
-    if (!env[key])
-      return json(
+  for (const chave of obrigatorias) {
+    if (!ambiente[chave])
+      return responderJson(
         {
           error:
             'O formulário ainda não foi configurado. Entre em contato pelo e-mail exibido na página.',
@@ -36,55 +45,78 @@ export async function handleContact(request, env = process.env) {
         503,
       );
   }
-
-  let body;
+  let corpo;
   try {
-    body = await request.json();
-    if (!body || typeof body !== 'object' || Array.isArray(body))
+    corpo = await solicitacao.json();
+    if (!corpo || typeof corpo !== 'object' || Array.isArray(corpo))
       throw new Error('Dados inválidos.');
   } catch {
-    return json({ error: 'Os dados enviados são inválidos.' }, 400);
+    return responderJson(
+      {
+        error: 'Os dados enviados são inválidos.',
+      },
+      400,
+    );
   }
-  const errors = validateContact(body);
-  if (errors.name || errors.email || errors.subject || errors.message)
-    return json({ error: 'Confira os campos do formulário.', fields: errors }, 400);
-  const contact = normalizeContact(body);
-
+  const errosCampos = validarContato(corpo);
+  if (errosCampos.name || errosCampos.email || errosCampos.subject || errosCampos.message)
+    return responderJson(
+      {
+        error: 'Confira os campos do formulário.',
+        fields: errosCampos,
+      },
+      400,
+    );
+  const contato = normalizarContato(corpo);
   try {
-    const saved = await databaseRequest(env, 'messages?select=id', contact);
-    if (!saved.ok)
-      return json(
-        { error: 'Não foi possível salvar sua mensagem. Tente novamente mais tarde.' },
+    const mensagemSalva = await consultarBanco(ambiente, 'messages?select=id', contato);
+    if (!mensagemSalva.ok)
+      return responderJson(
+        {
+          error: 'Não foi possível salvar sua mensagem. Tente novamente mais tarde.',
+        },
         502,
       );
-    const messages = await saved.json();
-    const id = messages[0].id;
-
-    let emailSent = false;
+    const mensagens = await mensagemSalva.json();
+    const identificador = mensagens[0].id;
+    let emailEnviado = false;
     try {
       const email = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${env.RESEND_API_KEY}`,
+          Authorization: `Bearer ${ambiente.CHAVE_API_RESEND}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: env.CONTACT_FROM_EMAIL,
-          to: [env.CONTACT_TO_EMAIL],
-          reply_to: contact.email,
-          subject: `Portfólio: ${contact.subject}`,
-          text: `Nova mensagem de ${contact.name}\nE-mail: ${contact.email}\n\n${contact.message}`,
+          from: ambiente.EMAIL_REMETENTE_CONTATO,
+          to: [ambiente.EMAIL_DESTINATARIO_CONTATO],
+          reply_to: contato.email,
+          subject: `Portfólio: ${contato.subject}`,
+          text: `Nova mensagem de ${contato.name}\nE-mail: ${contato.email}\n\n${contato.message}`,
         }),
       });
-      emailSent = email.ok;
-      if (emailSent)
-        await databaseRequest(env, `messages?id=eq.${id}`, { email_sent: true }, 'PATCH');
+      emailEnviado = email.ok;
+      if (emailEnviado)
+        await consultarBanco(
+          ambiente,
+          `messages?id=eq.${identificador}`,
+          {
+            email_sent: true,
+          },
+          'PATCH',
+        );
     } catch {
       // A mensagem permanece salva se o envio do e-mail falhar.
     }
-    return json({ saved: true, emailSent }, 201);
+    return responderJson(
+      {
+        saved: true,
+        emailSent: emailEnviado,
+      },
+      201,
+    );
   } catch {
-    return json(
+    return responderJson(
       {
         error:
           'O serviço de mensagens está temporariamente indisponível. Tente novamente mais tarde.',

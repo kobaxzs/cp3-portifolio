@@ -1,48 +1,76 @@
-import { useEffect, useState } from 'react';
-import { AuthContext } from '../hooks/AuthContext.js';
-import { supabase, verifyOwner } from '../services/supabase.js';
-
-export default function AuthProvider({ children }) {
-  const [session, setSession] = useState(undefined);
-  const [attempt, setAttempt] = useState(0);
-  const [access, setAccess] = useState({ loading: true, owner: false, error: '' });
-
-  useEffect(() => {
-    if (!supabase) {
-      setSession(null);
+import { useEffect as useEfeito, useState as useEstado } from 'react';
+import { ContextoAutenticacao } from '../hooks/AuthContext.js';
+import { clienteSupabase, verificarDono } from '../services/supabase.js';
+export default function ProvedorAutenticacao({ children: conteudo }) {
+  const [sessao, definirSessao] = useEstado(undefined);
+  const [tentativa, definirTentativa] = useEstado(0);
+  const [acesso, definirAcesso] = useEstado({
+    carregando: true,
+    dono: false,
+    erro: '',
+  });
+  useEfeito(() => {
+    if (!clienteSupabase) {
+      definirSessao(null);
       return;
     }
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: dados } = clienteSupabase.auth.onAuthStateChange((_evento, proximaSessao) => {
       // Callback síncrono: a verificação de rede acontece no efeito abaixo.
-      setAccess({ loading: true, owner: false, error: '' });
-      setSession(nextSession);
+      definirAcesso({
+        carregando: true,
+        dono: false,
+        erro: '',
+      });
+      definirSessao(proximaSessao);
     });
-    return () => data.subscription.unsubscribe();
+    return () => dados.subscription.unsubscribe();
   }, []);
-
-  useEffect(() => {
-    let active = true;
-    if (session === undefined) return;
-    if (!session) {
-      setAccess({ loading: false, owner: false, error: '' });
+  useEfeito(() => {
+    let ativo = true;
+    if (sessao === undefined) return;
+    if (!sessao) {
+      definirAcesso({
+        carregando: false,
+        dono: false,
+        erro: '',
+      });
       return;
     }
-    setAccess({ loading: true, owner: false, error: '' });
-    verifyOwner()
-      .then((owner) => {
-        if (active) setAccess({ loading: false, owner, error: '' });
+    definirAcesso({
+      carregando: true,
+      dono: false,
+      erro: '',
+    });
+    verificarDono()
+      .then((dono) => {
+        if (ativo)
+          definirAcesso({
+            carregando: false,
+            dono,
+            erro: '',
+          });
       })
-      .catch((error) => {
-        if (active) setAccess({ loading: false, owner: false, error: error.message });
+      .catch((erro) => {
+        if (ativo)
+          definirAcesso({
+            carregando: false,
+            dono: false,
+            erro: erro.message,
+          });
       });
     return () => {
-      active = false;
+      ativo = false;
     };
-  }, [session, attempt]);
-
+  }, [sessao, tentativa]);
   return (
-    <AuthContext.Provider value={{ ...access, session, retry: () => setAttempt(attempt + 1) }}>
-      {children}
-    </AuthContext.Provider>
+    <ContextoAutenticacao.Provider
+      value={{
+        ...acesso,
+        sessao,
+        tentarNovamente: () => definirTentativa(tentativa + 1),
+      }}
+    >
+      {conteudo}
+    </ContextoAutenticacao.Provider>
   );
 }

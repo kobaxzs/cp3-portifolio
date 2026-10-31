@@ -1,28 +1,32 @@
-import { Link } from 'react-router';
-import { profile } from '../config.js';
-import Icon from '../components/Icon.jsx';
-import ProjectCard from '../components/ProjectCard.jsx';
-import { EmptyState, ErrorState, ProjectSkeletons } from '../components/Feedback.jsx';
-import useAsyncData from '../hooks/useAsyncData.js';
-import { getRepositories } from '../services/github.js';
-import { getFeaturedProjects } from '../services/featured.js';
-
-async function loadHome() {
-  const repos = await getRepositories();
-  let featured;
+import { Link as LinkInterno } from 'react-router';
+import { perfil } from '../config.js';
+import Icone from '../components/Icon.jsx';
+import CardProjeto from '../components/ProjectCard.jsx';
+import { EstadoVazio, EstadoErro, EsqueletosProjetos } from '../components/Feedback.jsx';
+import useDados from '../hooks/useAsyncData.js';
+import { obterRepositorios } from '../services/github.js';
+import { obterProjetosDestaque } from '../services/featured.js';
+async function carregarInicio() {
+  const repositorios = await obterRepositorios();
+  let destaques;
   try {
-    featured = await getFeaturedProjects();
-  } catch (error) {
-    featured = { names: [], error: error.message };
+    destaques = await obterProjetosDestaque();
+  } catch (erro) {
+    destaques = {
+      nomes: [],
+      erro: erro.message,
+    };
   }
-  return { repos, featured };
+  return {
+    repositorios,
+    destaques,
+  };
 }
-
-export default function HomePage() {
-  const { data, loading, error, retry } = useAsyncData(loadHome);
-  const selected = data?.featured.names.length
-    ? data.repos.filter((repo) => data.featured.names.includes(repo.name))
-    : data?.repos.slice(0, 3);
+export default function PaginaInicial() {
+  const { dados, carregando, erro, tentarNovamente } = useDados(carregarInicio);
+  const selecionado = dados?.destaques.nomes.length
+    ? dados.repositorios.filter((repositorio) => dados.destaques.nomes.includes(repositorio.name))
+    : dados?.repositorios.slice(0, 3);
   return (
     <>
       <section className="container hero">
@@ -47,12 +51,12 @@ export default function HomePage() {
             desenvolvimento. Aqui, compartilho o que aprendo e o que transformo em projeto.
           </p>
           <div className="hero-buttons">
-            <Link to="/projetos" className="button">
-              Explorar projetos <Icon name="right" size={18} />
-            </Link>
-            <Link to="/contato" className="text-link">
-              Vamos conversar <Icon name="arrow" size={17} />
-            </Link>
+            <LinkInterno to="/projetos" className="button">
+              Explorar projetos <Icone nome="direita" tamanho={18} />
+            </LinkInterno>
+            <LinkInterno to="/contato" className="text-link">
+              Vamos conversar <Icone nome="seta" tamanho={17} />
+            </LinkInterno>
           </div>
           <div className="hero-footnote">
             <span>APRENDER. CONSTRUIR. EVOLUIR.</span>
@@ -65,7 +69,7 @@ export default function HomePage() {
         >
           <div className="visual-label">
             <span>DIÁRIO DE CONSTRUÇÃO</span>
-            <Icon name="arrow" size={18} />
+            <Icone nome="seta" tamanho={18} />
           </div>
           <div className="code-window">
             <div className="code-window-bar">
@@ -118,22 +122,22 @@ export default function HomePage() {
           </div>
           <div className="floating-label">
             <span className="floating-icon">
-              <Icon name="branch" size={22} />
+              <Icone nome="ramificacao" tamanho={22} />
             </span>
             <div>
               Da ideia ao primeiro commit.<small>O aprendizado acontece construindo.</small>
             </div>
           </div>
-          <Icon name="asterisk" className="visual-cross" />
+          <Icone nome="asterisco" className="visual-cross" />
         </div>
       </section>
       <div className="tech-strip">
         <div className="container tech-strip-inner">
           <span>NA MINHA JORNADA</span>
-          {['JavaScript', 'React', 'HTML & CSS', 'Git & GitHub'].map((skill, index) => (
-            <span className="tech-strip-item" key={skill}>
-              {index > 0 && <Icon name="asterisk" className="strip-star" />}
-              <strong>{skill}</strong>
+          {['JavaScript', 'React', 'HTML & CSS', 'Git & GitHub'].map((habilidade, indice) => (
+            <span className="tech-strip-item" key={habilidade}>
+              {indice > 0 && <Icone nome="asterisco" className="strip-star" />}
+              <strong>{habilidade}</strong>
             </span>
           ))}
         </div>
@@ -143,41 +147,41 @@ export default function HomePage() {
           <div>
             <p className="eyebrow">01 / DA TEORIA À PRÁTICA</p>
             <h2>
-              {data?.featured.names.length ? 'Projetos em destaque' : 'Projetos recentes'}
+              {dados?.destaques.nomes.length ? 'Projetos em destaque' : 'Projetos recentes'}
               <span className="accent">.</span>
             </h2>
           </div>
-          <Link className="text-link" to="/projetos">
-            Ver todos os projetos <Icon name="arrow" size={18} />
-          </Link>
+          <LinkInterno className="text-link" to="/projetos">
+            Ver todos os projetos <Icone nome="seta" tamanho={18} />
+          </LinkInterno>
         </div>
         <p className="section-description">
           Código real, aprendizado contínuo. Projetos carregados diretamente do meu GitHub.
         </p>
-        {loading ? (
-          <ProjectSkeletons />
-        ) : error ? (
-          <ErrorState message={error} onRetry={retry} />
-        ) : selected.length ? (
+        {carregando ? (
+          <EsqueletosProjetos />
+        ) : erro ? (
+          <EstadoErro mensagem={erro} aoTentarNovamente={tentarNovamente} />
+        ) : selecionado.length ? (
           <div className="project-grid">
-            {selected.map((repo, index) => (
-              <ProjectCard repo={repo} index={index} key={repo.id} />
+            {selecionado.map((repositorio, indice) => (
+              <CardProjeto repositorio={repositorio} indice={indice} key={repositorio.id} />
             ))}
           </div>
         ) : (
-          <EmptyState
-            title={
-              data?.repos.length
+          <EstadoVazio
+            titulo={
+              dados?.repositorios.length
                 ? 'Nenhum destaque disponível'
                 : 'Os próximos projetos começam aqui'
             }
           >
-            {data?.repos.length
+            {dados?.repositorios.length
               ? 'Os projetos destacados não estão disponíveis no GitHub. Você pode consultar todos os projetos.'
               : 'Ainda não há repositórios públicos para mostrar.'}
-          </EmptyState>
+          </EstadoVazio>
         )}
-        {data?.featured.error && (
+        {dados?.destaques.erro && (
           <p className="notice" role="status">
             Os destaques estão indisponíveis. Exibindo os projetos mais recentes do GitHub.
           </p>
@@ -193,16 +197,16 @@ export default function HomePage() {
         </div>
         <div>
           <p>
-            Sou {profile.name}, estudante de Engenharia de Software na FIAP. Estou explorando como
+            Sou {perfil.nome}, estudante de Engenharia de Software na FIAP. Estou explorando como
             transformar problemas em interfaces e soluções que façam sentido.
           </p>
           <p>
             Este portfólio faz parte dessa jornada: um lugar para reunir meus projetos, praticar o
             que estudo e acompanhar minha evolução.
           </p>
-          <Link className="text-link" to="/sobre">
-            Um pouco mais sobre mim <Icon name="arrow" size={18} />
-          </Link>
+          <LinkInterno className="text-link" to="/sobre">
+            Um pouco mais sobre mim <Icone nome="seta" tamanho={18} />
+          </LinkInterno>
         </div>
       </section>
       <section className="container contact-banner">
@@ -214,9 +218,9 @@ export default function HomePage() {
             uma conexão?
           </h2>
         </div>
-        <Link className="round-link" to="/contato" aria-label="Ir para contato">
-          <Icon name="arrow" size={38} />
-        </Link>
+        <LinkInterno className="round-link" to="/contato" aria-label="Ir para contato">
+          <Icone nome="seta" tamanho={38} />
+        </LinkInterno>
       </section>
     </>
   );

@@ -1,8 +1,7 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/react';
-
-afterEach(() => {
-  cleanup();
+import { afterEach as depoisDeCadaTeste, vi } from 'vitest';
+import { cleanup as limparTela } from '@testing-library/react';
+depoisDeCadaTeste(() => {
+  limparTela();
   vi.unstubAllGlobals();
 });

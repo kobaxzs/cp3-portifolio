@@ -1,69 +1,68 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
-import { useAuth } from '../../hooks/AuthContext.js';
-import { signOut } from '../../services/supabase.js';
+import { useState as useEstado } from 'react';
+import { Link as LinkInterno } from 'react-router';
+import { useAutenticacao } from '../../hooks/AuthContext.js';
+import { encerrarSessao } from '../../services/supabase.js';
 import {
-  getMessages,
-  getOwnerFeatured,
-  setResponded,
-  toggleFeatured,
+  obterMensagens,
+  obterDestaquesDono,
+  marcarRespondida,
+  alterarDestaque,
 } from '../../services/dashboard.js';
-import { getRepositories } from '../../services/github.js';
-import useAsyncData from '../../hooks/useAsyncData.js';
-import { EmptyState, ErrorState, LoadingState } from '../../components/Feedback.jsx';
-import Icon from '../../components/Icon.jsx';
-
-async function loadDashboard() {
-  const messages = await getMessages();
-  const featured = await getOwnerFeatured();
-  const repos = await getRepositories();
-  return { messages, featured, repos };
+import { obterRepositorios } from '../../services/github.js';
+import useDados from '../../hooks/useAsyncData.js';
+import { EstadoVazio, EstadoErro, EstadoCarregamento } from '../../components/Feedback.jsx';
+import Icone from '../../components/Icon.jsx';
+async function carregarPainel() {
+  const mensagens = await obterMensagens();
+  const destaques = await obterDestaquesDono();
+  const repositorios = await obterRepositorios();
+  return {
+    mensagens,
+    destaques,
+    repositorios,
+  };
 }
-
-export default function DashboardPage() {
-  const { session } = useAuth();
-  const { data, loading, error, retry } = useAsyncData(loadDashboard);
-  const [tab, setTab] = useState('messages');
-  const [filter, setFilter] = useState('all');
-  const [saving, setSaving] = useState('');
-  const [feedback, setFeedback] = useState('');
-
-  async function updateMessage(item) {
-    setSaving(item.id);
-    setFeedback('');
+export default function PaginaPainel() {
+  const { sessao } = useAutenticacao();
+  const { dados, carregando, erro, tentarNovamente } = useDados(carregarPainel);
+  const [aba, definirAba] = useEstado('messages');
+  const [filtro, definirFiltro] = useEstado('all');
+  const [salvando, definirSalvando] = useEstado('');
+  const [retorno, definirRetorno] = useEstado('');
+  async function atualizarMensagem(item) {
+    definirSalvando(item.id);
+    definirRetorno('');
     try {
-      await setResponded(item.id, !item.responded);
-      retry();
-    } catch (err) {
-      setFeedback(err.message);
+      await marcarRespondida(item.id, !item.responded);
+      tentarNovamente();
+    } catch (erroCapturado) {
+      definirRetorno(erroCapturado.message);
     } finally {
-      setSaving('');
+      definirSalvando('');
     }
   }
-  async function updateFeatured(name, selected) {
-    setSaving(name);
-    setFeedback('');
+  async function atualizarDestaque(nome, selecionado) {
+    definirSalvando(nome);
+    definirRetorno('');
     try {
-      await toggleFeatured(name, selected);
-      retry();
-    } catch (err) {
-      setFeedback(err.message);
+      await alterarDestaque(nome, selecionado);
+      tentarNovamente();
+    } catch (erroCapturado) {
+      definirRetorno(erroCapturado.message);
     } finally {
-      setSaving('');
+      definirSalvando('');
     }
   }
-  async function exit() {
+  async function sairDaConta() {
     try {
-      await signOut();
-    } catch (err) {
-      setFeedback(err.message);
+      await encerrarSessao();
+    } catch (erroCapturado) {
+      definirRetorno(erroCapturado.message);
     }
   }
-
-  const messages = (data?.messages || []).filter(
-    (item) => filter === 'all' || (filter === 'pending' ? !item.responded : item.responded),
+  const mensagens = (dados?.mensagens || []).filter(
+    (item) => filtro === 'all' || (filtro === 'pending' ? !item.responded : item.responded),
   );
-
   return (
     <>
       <div className="dashboard-heading">
@@ -72,45 +71,46 @@ export default function DashboardPage() {
           <h1>
             Seu espaço de controle<span className="accent">.</span>
           </h1>
-          <p className="muted">{session.user.email}</p>
+          <p className="muted">{sessao.user.email}</p>
         </div>
-        <button className="button button-outline button-small" onClick={exit}>
-          Sair da conta <Icon name="arrow" size={16} />
+        <button className="button button-outline button-small" onClick={sairDaConta}>
+          Sair da conta <Icone nome="seta" tamanho={16} />
         </button>
       </div>
       <div className="dashboard-tabs" role="group" aria-label="Seções do painel">
-        <button aria-pressed={tab === 'messages'} onClick={() => setTab('messages')}>
-          Mensagens {data && <span>{data.messages.filter((item) => !item.responded).length}</span>}
+        <button aria-pressed={aba === 'messages'} onClick={() => definirAba('messages')}>
+          Mensagens{' '}
+          {dados && <span>{dados.mensagens.filter((item) => !item.responded).length}</span>}
         </button>
-        <button aria-pressed={tab === 'featured'} onClick={() => setTab('featured')}>
+        <button aria-pressed={aba === 'featured'} onClick={() => definirAba('featured')}>
           Projetos em destaque
         </button>
       </div>
-      {feedback && (
+      {retorno && (
         <p className="form-feedback error" role="alert">
-          {feedback}
+          {retorno}
         </p>
       )}
-      {loading ? (
-        <LoadingState text="Carregando painel…" />
-      ) : error ? (
-        <ErrorState message={error} onRetry={retry} />
-      ) : tab === 'messages' ? (
+      {carregando ? (
+        <EstadoCarregamento texto="Carregando painel…" />
+      ) : erro ? (
+        <EstadoErro mensagem={erro} aoTentarNovamente={tentarNovamente} />
+      ) : aba === 'messages' ? (
         <section>
           <div className="panel-section-heading">
             <h2>Conversas recebidas</h2>
             <label className="inline-label">
               Exibir
-              <select value={filter} onChange={(event) => setFilter(event.target.value)}>
+              <select value={filtro} onChange={(evento) => definirFiltro(evento.target.value)}>
                 <option value="all">Todas</option>
                 <option value="pending">Pendentes</option>
                 <option value="answered">Respondidas</option>
               </select>
             </label>
           </div>
-          {messages.length ? (
+          {mensagens.length ? (
             <div className="message-list">
-              {messages.map((item) => (
+              {mensagens.map((item) => (
                 <article className="message-card" key={item.id}>
                   <div className="message-header">
                     <div>
@@ -134,14 +134,14 @@ export default function DashboardPage() {
                       className="text-link"
                       href={`mailto:${item.email}?subject=${encodeURIComponent(`Re: ${item.subject}`)}`}
                     >
-                      Responder por e-mail <Icon name="arrow" size={16} />
+                      Responder por e-mail <Icone nome="seta" tamanho={16} />
                     </a>
                     <button
-                      disabled={Boolean(saving)}
+                      disabled={Boolean(salvando)}
                       className="button button-small button-outline"
-                      onClick={() => updateMessage(item)}
+                      onClick={() => atualizarMensagem(item)}
                     >
-                      {saving === item.id
+                      {salvando === item.id
                         ? 'Salvando…'
                         : item.responded
                           ? 'Marcar como pendente'
@@ -152,9 +152,9 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <EmptyState title="Nenhuma mensagem nesta lista">
+            <EstadoVazio titulo="Nenhuma mensagem nesta lista">
               As mensagens enviadas pelo formulário serão exibidas aqui.
-            </EmptyState>
+            </EstadoVazio>
           )}
         </section>
       ) : (
@@ -166,41 +166,43 @@ export default function DashboardPage() {
                 As alterações são salvas no banco e ficam visíveis para os visitantes.
               </p>
             </div>
-            <Link to="/" className="text-link">
-              Ver início <Icon name="arrow" size={16} />
-            </Link>
+            <LinkInterno to="/" className="text-link">
+              Ver início <Icone nome="seta" tamanho={16} />
+            </LinkInterno>
           </div>
-          {!data.featured.length && (
+          {!dados.destaques.length && (
             <p className="notice">
               Sem seleção, a página inicial mostra os três repositórios mais recentes.
             </p>
           )}
-          {data.repos.length ? (
+          {dados.repositorios.length ? (
             <div className="featured-list">
-              {data.repos.map((repo) => (
-                <label className="featured-option" key={repo.id}>
+              {dados.repositorios.map((repositorio) => (
+                <label className="featured-option" key={repositorio.id}>
                   <span>
-                    <strong>{repo.name}</strong>
+                    <strong>{repositorio.name}</strong>
                     <small aria-live="polite">
-                      {saving === repo.name
+                      {salvando === repositorio.name
                         ? 'Salvando…'
-                        : repo.language || 'Sem linguagem informada'}
+                        : repositorio.language || 'Sem linguagem informada'}
                     </small>
                   </span>
                   <input
                     type="checkbox"
-                    aria-label={`Destacar ${repo.name}`}
-                    checked={data.featured.includes(repo.name)}
-                    disabled={Boolean(saving)}
-                    onChange={(event) => updateFeatured(repo.name, event.target.checked)}
+                    aria-label={`Destacar ${repositorio.name}`}
+                    checked={dados.destaques.includes(repositorio.name)}
+                    disabled={Boolean(salvando)}
+                    onChange={(evento) =>
+                      atualizarDestaque(repositorio.name, evento.target.checked)
+                    }
                   />
                 </label>
               ))}
             </div>
           ) : (
-            <EmptyState title="Nenhum projeto disponível">
+            <EstadoVazio titulo="Nenhum projeto disponível">
               Publique seus repositórios no GitHub para selecioná-los.
-            </EmptyState>
+            </EstadoVazio>
           )}
         </section>
       )}

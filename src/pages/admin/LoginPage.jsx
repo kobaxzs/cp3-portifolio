@@ -1,48 +1,43 @@
-import { useState } from 'react';
-import { Navigate } from 'react-router';
-import { useAuth } from '../../hooks/AuthContext.js';
-import { hasBackend } from '../../config.js';
-import { signIn, signOut } from '../../services/supabase.js';
-import { LoadingState, ErrorState } from '../../components/Feedback.jsx';
-import Icon from '../../components/Icon.jsx';
-
-export default function LoginPage() {
-  const { loading, owner, session, error, retry } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
-
-  async function submit(event) {
-    event.preventDefault();
-    if (submitting) return;
-    setSubmitting(true);
-    setMessage('');
+import { useState as useEstado } from 'react';
+import { Navigate as Redirecionar } from 'react-router';
+import { useAutenticacao } from '../../hooks/AuthContext.js';
+import { temConfiguracaoBanco } from '../../config.js';
+import { entrarNaConta, encerrarSessao } from '../../services/supabase.js';
+import { EstadoCarregamento, EstadoErro } from '../../components/Feedback.jsx';
+import Icone from '../../components/Icon.jsx';
+export default function PaginaLogin() {
+  const { carregando, dono, sessao, erro, tentarNovamente } = useAutenticacao();
+  const [email, definirEmail] = useEstado('');
+  const [senha, definirSenha] = useEstado('');
+  const [entrando, definirEntrando] = useEstado(false);
+  const [mensagem, definirMensagem] = useEstado('');
+  async function enviarFormulario(evento) {
+    evento.preventDefault();
+    if (entrando) return;
+    definirEntrando(true);
+    definirMensagem('');
     try {
-      await signIn(email.trim(), password);
-    } catch (err) {
-      setMessage(err.message);
+      await entrarNaConta(email.trim(), senha);
+    } catch (erroCapturado) {
+      definirMensagem(erroCapturado.message);
     } finally {
-      setSubmitting(false);
+      definirEntrando(false);
     }
   }
-
-  async function exit() {
+  async function sairDaConta() {
     try {
-      await signOut();
-    } catch (err) {
-      setMessage(err.message);
+      await encerrarSessao();
+    } catch (erroCapturado) {
+      definirMensagem(erroCapturado.message);
     }
   }
-
-  if (loading) return <LoadingState text="Verificando sessão…" />;
-  if (owner) return <Navigate to="/dashboard" replace />;
-  if (error) return <ErrorState message={error} onRetry={retry} />;
-
+  if (carregando) return <EstadoCarregamento texto="Verificando sessão…" />;
+  if (dono) return <Redirecionar to="/dashboard" replace />;
+  if (erro) return <EstadoErro mensagem={erro} aoTentarNovamente={tentarNovamente} />;
   return (
     <div className="login-card">
       <span className="login-mark">
-        <Icon name="code" size={28} />
+        <Icone nome="codigo" tamanho={28} />
       </span>
       <p className="eyebrow">ÁREA DO PROPRIETÁRIO</p>
       <h1>
@@ -50,24 +45,24 @@ export default function LoginPage() {
         <span className="accent">.</span>
       </h1>
       <p>Apenas o proprietário tem acesso a esta área.</p>
-      {!hasBackend && (
+      {!temConfiguracaoBanco && (
         <div className="notice" role="status">
           O acesso ainda não foi configurado. Preencha as variáveis do Supabase e siga a seção de
           configuração do README.
         </div>
       )}
-      {session && !owner ? (
+      {sessao && !dono ? (
         <div className="notice">
           <p>
             Esta conta não tem permissão para abrir o painel. Saia e entre com a conta do
             proprietário.
           </p>
-          <button className="button button-outline" onClick={exit}>
+          <button className="button button-outline" onClick={sairDaConta}>
             Sair desta conta
           </button>
         </div>
       ) : (
-        <form onSubmit={submit}>
+        <form onSubmit={enviarFormulario}>
           <div className="form-field">
             <label htmlFor="login-email">E-mail</label>
             <input
@@ -76,7 +71,7 @@ export default function LoginPage() {
               autoComplete="username"
               required
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(evento) => definirEmail(evento.target.value)}
             />
           </div>
           <div className="form-field">
@@ -86,24 +81,28 @@ export default function LoginPage() {
               type="password"
               autoComplete="current-password"
               required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              value={senha}
+              onChange={(evento) => definirSenha(evento.target.value)}
             />
           </div>
-          {message && (
+          {mensagem && (
             <p role="alert" className="form-feedback error">
-              {message}
+              {mensagem}
             </p>
           )}
-          <button type="submit" className="button button-full" disabled={!hasBackend || submitting}>
-            {submitting ? (
+          <button
+            type="submit"
+            className="button button-full"
+            disabled={!temConfiguracaoBanco || entrando}
+          >
+            {entrando ? (
               <>
                 <span className="spinner" />
                 Entrando…
               </>
             ) : (
               <>
-                Entrar no painel <Icon name="arrow" size={18} />
+                Entrar no painel <Icone nome="seta" tamanho={18} />
               </>
             )}
           </button>

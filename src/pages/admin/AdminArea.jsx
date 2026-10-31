@@ -1,20 +1,19 @@
-import AuthProvider from '../../components/AuthProvider.jsx';
-import ProtectedRoute from '../../components/ProtectedRoute.jsx';
-import LoginPage from './LoginPage.jsx';
-import DashboardPage from './DashboardPage.jsx';
-
-export default function AdminArea({ dashboard = false }) {
+import ProvedorAutenticacao from '../../components/AuthProvider.jsx';
+import RotaProtegida from '../../components/ProtectedRoute.jsx';
+import PaginaLogin from './LoginPage.jsx';
+import PaginaPainel from './DashboardPage.jsx';
+export default function AreaAdministrativa({ painel = false }) {
   return (
     <div className="container page section admin-area">
-      <AuthProvider>
-        {dashboard ? (
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
+      <ProvedorAutenticacao>
+        {painel ? (
+          <RotaProtegida>
+            <PaginaPainel />
+          </RotaProtegida>
         ) : (
-          <LoginPage />
+          <PaginaLogin />
         )}
-      </AuthProvider>
+      </ProvedorAutenticacao>
     </div>
   );
 }

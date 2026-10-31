@@ -1,37 +1,41 @@
-import { createClient } from '@supabase/supabase-js';
-import { hasBackend, supabaseConfig } from '../config.js';
+import { createClient as criarCliente } from '@supabase/supabase-js';
+import { temConfiguracaoBanco, configuracaoSupabase } from '../config.js';
 
 // Este módulo só é importado pela área administrativa, carregada sob demanda.
-export const supabase = hasBackend ? createClient(supabaseConfig.url, supabaseConfig.key) : null;
-
-export async function verifyOwner() {
-  if (!supabase) return false;
+export const clienteSupabase = temConfiguracaoBanco
+  ? criarCliente(configuracaoSupabase.url, configuracaoSupabase.chave)
+  : null;
+export async function verificarDono() {
+  if (!clienteSupabase) return false;
   const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error) {
-    if (error.status === 400 || error.status === 401 || error.status === 403) return false;
+    data: { user: usuario },
+    error: erro,
+  } = await clienteSupabase.auth.getUser();
+  if (erro) {
+    if (erro.status === 400 || erro.status === 401 || erro.status === 403) return false;
     throw new Error('Não foi possível verificar sua sessão. Confira a conexão e tente novamente.');
   }
-  if (!user) return false;
-  const { data, error: ownerError } = await supabase
+  if (!usuario) return false;
+  const { data: dados, error: erroPermissao } = await clienteSupabase
     .from('portfolio_owners')
     .select('id')
-    .eq('id', user.id)
+    .eq('id', usuario.id)
     .maybeSingle();
-  if (ownerError)
+  if (erroPermissao)
     throw new Error('Não foi possível verificar o acesso. Confira a configuração do banco.');
-  return Boolean(data);
+  return Boolean(dados);
 }
-
-export async function signIn(email, password) {
-  if (!supabase) throw new Error('Configure o Supabase para acessar o painel.');
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw new Error('Não foi possível entrar. Confira e-mail e senha e tente novamente.');
+export async function entrarNaConta(email, senha) {
+  if (!clienteSupabase) throw new Error('Configure o Supabase para acessar o painel.');
+  const { error: erro } = await clienteSupabase.auth.signInWithPassword({
+    email,
+    password: senha,
+  });
+  if (erro) throw new Error('Não foi possível entrar. Confira e-mail e senha e tente novamente.');
 }
-
-export async function signOut() {
-  const { error } = await supabase.auth.signOut({ scope: 'local' });
-  if (error) throw new Error('Não foi possível encerrar a sessão. Tente novamente.');
+export async function encerrarSessao() {
+  const { error: erro } = await clienteSupabase.auth.signOut({
+    scope: 'local',
+  });
+  if (erro) throw new Error('Não foi possível encerrar a sessão. Tente novamente.');
 }

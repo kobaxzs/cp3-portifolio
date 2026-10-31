@@ -1,69 +1,129 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest';
-import { handleContact } from './contact.js';
-
-const env = {
-  SUPABASE_URL: 'https://test.supabase.co',
-  SUPABASE_SECRET_KEY: 'test-server-key',
-  RESEND_API_KEY: 'test-email-key',
-  CONTACT_TO_EMAIL: 'owner@example.com',
-  CONTACT_FROM_EMAIL: 'portfolio@example.com',
+import { describe as descrever, expect as esperar, it as teste, vi } from 'vitest';
+import { tratarContato } from './contact.js';
+const ambiente = {
+  URL_SUPABASE: 'https://test.supabase.co',
+  CHAVE_SECRETA_SUPABASE: 'test-server-key',
+  CHAVE_API_RESEND: 'test-email-key',
+  EMAIL_DESTINATARIO_CONTATO: 'owner@example.com',
+  EMAIL_REMETENTE_CONTATO: 'portfolio@example.com',
 };
-const data = {
+const dados = {
   name: 'Pessoa de teste',
   email: 'pessoa@example.com',
   subject: 'Uma troca de ideias',
   message: 'Mensagem válida de teste com mais de vinte caracteres.',
 };
-function request(body = data) {
+function solicitacao(corpo = dados) {
   return new Request('https://portfolio.example.com/api/contact', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(corpo),
   });
 }
+descrever('servidor de contato', () => {
+  teste('não simula sucesso sem configuração', async () => {
+    esperar((await tratarContato(solicitacao(), {})).status).toBe(503);
+  });
+  teste('mantém o contato compatível com as variáveis antigas da Vercel', async () => {
+    const ambienteAnterior = {
+      SUPABASE_URL: ambiente.URL_SUPABASE,
+      SUPABASE_SECRET_KEY: ambiente.CHAVE_SECRETA_SUPABASE,
+      RESEND_API_KEY: ambiente.CHAVE_API_RESEND,
+      CONTACT_TO_EMAIL: ambiente.EMAIL_DESTINATARIO_CONTATO,
+      CONTACT_FROM_EMAIL: ambiente.EMAIL_REMETENTE_CONTATO,
+    };
+    const buscaSimulada = vi.fn().mockResolvedValue(new Response('{}', { status: 500 }));
+    vi.stubGlobal('fetch', buscaSimulada);
 
-describe('servidor de contato', () => {
-  it('não simula sucesso sem configuração', async () => {
-    expect((await handleContact(request(), {})).status).toBe(503);
+    const resposta = await tratarContato(solicitacao(), ambienteAnterior);
+
+    esperar(resposta.status).toBe(502);
+    esperar(buscaSimulada).toHaveBeenCalledTimes(1);
+    esperar(buscaSimulada.mock.calls[0][0]).toBe(
+      'https://test.supabase.co/rest/v1/messages?select=id',
+    );
   });
-  it('rejeita dados inválidos sem chamar serviços', async () => {
-    const mock = vi.fn();
-    vi.stubGlobal('fetch', mock);
-    expect((await handleContact(request({ ...data, message: 'curta' }), env)).status).toBe(400);
-    expect(mock).not.toHaveBeenCalled();
+  teste('rejeita dados inválidos sem chamar serviços', async () => {
+    const simulacao = vi.fn();
+    vi.stubGlobal('fetch', simulacao);
+    esperar(
+      (
+        await tratarContato(
+          solicitacao({
+            ...dados,
+            message: 'curta',
+          }),
+          ambiente,
+        )
+      ).status,
+    ).toBe(400);
+    esperar(simulacao).not.toHaveBeenCalled();
   });
-  it('não envia e-mail se o banco não salvar a mensagem', async () => {
-    const mock = vi.fn().mockResolvedValue(new Response('{}', { status: 500 }));
-    vi.stubGlobal('fetch', mock);
-    expect((await handleContact(request(), env)).status).toBe(502);
-    expect(mock).toHaveBeenCalledTimes(1);
+  teste('não envia e-mail se o banco não salvar a mensagem', async () => {
+    const simulacao = vi.fn().mockResolvedValue(
+      new Response('{}', {
+        status: 500,
+      }),
+    );
+    vi.stubGlobal('fetch', simulacao);
+    esperar((await tratarContato(solicitacao(), ambiente)).status).toBe(502);
+    esperar(simulacao).toHaveBeenCalledTimes(1);
   });
-  it('grava antes de enviar e-mail e registra a notificação', async () => {
-    const mock = vi
+  teste('grava antes de enviar e-mail e registra a notificação', async () => {
+    const simulacao = vi
       .fn()
-      .mockResolvedValueOnce(Response.json([{ id: 'message-id' }]))
-      .mockResolvedValueOnce(Response.json({ id: 'email-id' }))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }));
-    vi.stubGlobal('fetch', mock);
-    const response = await handleContact(request(), env);
-    expect(response.status).toBe(201);
-    expect(await response.json()).toEqual({ saved: true, emailSent: true });
-    expect(mock.mock.calls[0][0]).toContain('/messages?select=id');
-    expect(mock.mock.calls[1][0]).toBe('https://api.resend.com/emails');
-    expect(JSON.parse(mock.mock.calls[1][1].body).reply_to).toBe(data.email);
-    expect(mock.mock.calls[2][1].method).toBe('PATCH');
-    expect(JSON.parse(mock.mock.calls[0][1].body)).toEqual(data);
+      .mockResolvedValueOnce(
+        Response.json([
+          {
+            id: 'message-id',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          id: 'email-id',
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 204,
+        }),
+      );
+    vi.stubGlobal('fetch', simulacao);
+    const resposta = await tratarContato(solicitacao(), ambiente);
+    esperar(resposta.status).toBe(201);
+    esperar(await resposta.json()).toEqual({
+      saved: true,
+      emailSent: true,
+    });
+    esperar(simulacao.mock.calls[0][0]).toContain('/messages?select=id');
+    esperar(simulacao.mock.calls[1][0]).toBe('https://api.resend.com/emails');
+    esperar(JSON.parse(simulacao.mock.calls[1][1].body).reply_to).toBe(dados.email);
+    esperar(simulacao.mock.calls[2][1].method).toBe('PATCH');
+    esperar(JSON.parse(simulacao.mock.calls[0][1].body)).toEqual(dados);
   });
-  it('informa salvamento parcial quando o provedor de e-mail falha', async () => {
+  teste('informa salvamento parcial quando o provedor de e-mail falha', async () => {
     vi.stubGlobal(
       'fetch',
       vi
         .fn()
-        .mockResolvedValueOnce(Response.json([{ id: 'message-id' }]))
-        .mockResolvedValueOnce(new Response('{}', { status: 503 })),
+        .mockResolvedValueOnce(
+          Response.json([
+            {
+              id: 'message-id',
+            },
+          ]),
+        )
+        .mockResolvedValueOnce(
+          new Response('{}', {
+            status: 503,
+          }),
+        ),
     );
-    expect(await (await handleContact(request(), env)).json()).toEqual({
+    esperar(await (await tratarContato(solicitacao(), ambiente)).json()).toEqual({
       saved: true,
       emailSent: false,
     });

@@ -5,39 +5,39 @@ begin;
 
 do $$
 declare
-  owner_id uuid;
-  visitor_id uuid;
-  test_message_id uuid := gen_random_uuid();
+  id_dono uuid;
+  id_visitante uuid;
+  id_mensagem_teste uuid := gen_random_uuid();
 begin
-  select id into owner_id from public.portfolio_owners limit 1;
-  select u.id into visitor_id
+  select id into id_dono from public.portfolio_owners limit 1;
+  select u.id into id_visitante
   from auth.users u
   where not exists (select 1 from public.portfolio_owners o where o.id = u.id)
   limit 1;
 
-  if owner_id is null or visitor_id is null then
+  if id_dono is null or id_visitante is null then
     raise exception 'Crie uma conta autorizada e outra sem autorização antes do teste.';
   end if;
 
-  perform set_config('portfolio_test.owner', owner_id::text, true);
-  perform set_config('portfolio_test.visitor', visitor_id::text, true);
-  perform set_config('portfolio_test.message', test_message_id::text, true);
-  perform set_config('portfolio_test.repo', 'rls-test-' || gen_random_uuid()::text, true);
-  perform set_config('request.jwt.claim.sub', visitor_id::text, true);
-  perform set_config('request.jwt.claims', json_build_object('sub', visitor_id, 'role', 'authenticated')::text, true);
+  perform set_config('teste_portfolio.dono', id_dono::text, true);
+  perform set_config('teste_portfolio.visitante', id_visitante::text, true);
+  perform set_config('teste_portfolio.mensagem', id_mensagem_teste::text, true);
+  perform set_config('teste_portfolio.repositorio', 'rls-test-' || gen_random_uuid()::text, true);
+  perform set_config('request.jwt.claim.sub', id_visitante::text, true);
+  perform set_config('request.jwt.claims', json_build_object('sub', id_visitante, 'role', 'authenticated')::text, true);
 
   insert into public.messages (id, name, email, subject, message)
-  values (test_message_id, 'Teste RLS', 'teste@example.com', 'Teste temporário',
+  values (id_mensagem_teste, 'Teste RLS', 'teste@example.com', 'Teste temporário',
     'Mensagem temporária para verificar as permissões do banco.');
   insert into public.featured_projects (repo_name)
-  values (current_setting('portfolio_test.repo'));
+  values (current_setting('teste_portfolio.repositorio'));
 end $$;
 
 set local role authenticated;
 
 do $$
 begin
-  if auth.uid() is distinct from current_setting('portfolio_test.visitor')::uuid then
+  if auth.uid() is distinct from current_setting('teste_portfolio.visitante')::uuid then
     raise exception 'A simulação da conta sem autorização falhou.';
   end if;
   if exists (select 1 from public.portfolio_owners)
@@ -46,20 +46,20 @@ begin
   end if;
 
   update public.messages set responded = true
-  where id = current_setting('portfolio_test.message')::uuid;
+  where id = current_setting('teste_portfolio.mensagem')::uuid;
   if found then
     raise exception 'FALHA: conta sem autorização conseguiu alterar mensagens.';
   end if;
 
   delete from public.featured_projects
-  where repo_name = current_setting('portfolio_test.repo');
+  where repo_name = current_setting('teste_portfolio.repositorio');
   if found then
     raise exception 'FALHA: conta sem autorização conseguiu remover destaques.';
   end if;
 
   begin
     insert into public.featured_projects (repo_name)
-    values (current_setting('portfolio_test.repo') || '-bloqueado');
+    values (current_setting('teste_portfolio.repositorio') || '-bloqueado');
     raise exception 'FALHA: conta sem autorização conseguiu adicionar destaques.';
   exception when insufficient_privilege then
     null; -- Bloqueio esperado pela RLS.
@@ -74,29 +74,29 @@ begin
 end $$;
 
 reset role;
-select set_config('request.jwt.claim.sub', current_setting('portfolio_test.owner'), true);
+select set_config('request.jwt.claim.sub', current_setting('teste_portfolio.dono'), true);
 select set_config('request.jwt.claims', json_build_object(
-  'sub', current_setting('portfolio_test.owner'), 'role', 'authenticated')::text, true);
+  'sub', current_setting('teste_portfolio.dono'), 'role', 'authenticated')::text, true);
 set local role authenticated;
 
 do $$
 begin
   if not exists (select 1 from public.portfolio_owners where id = auth.uid())
      or not exists (select 1 from public.messages
-       where id = current_setting('portfolio_test.message')::uuid) then
+       where id = current_setting('teste_portfolio.mensagem')::uuid) then
     raise exception 'FALHA: proprietário não conseguiu ler os dados necessários.';
   end if;
 
   update public.messages set responded = true
-  where id = current_setting('portfolio_test.message')::uuid;
+  where id = current_setting('teste_portfolio.mensagem')::uuid;
   if not found then
     raise exception 'FALHA: proprietário não conseguiu marcar a mensagem como respondida.';
   end if;
 
   insert into public.featured_projects (repo_name)
-  values (current_setting('portfolio_test.repo') || '-dono');
+  values (current_setting('teste_portfolio.repositorio') || '-dono');
   delete from public.featured_projects
-  where repo_name = current_setting('portfolio_test.repo') || '-dono';
+  where repo_name = current_setting('teste_portfolio.repositorio') || '-dono';
   if not found then
     raise exception 'FALHA: proprietário não conseguiu remover seu destaque.';
   end if;
@@ -122,7 +122,7 @@ begin
     null;
   end;
   if not exists (select 1 from public.featured_projects
-    where repo_name = current_setting('portfolio_test.repo')) then
+    where repo_name = current_setting('teste_portfolio.repositorio')) then
     raise exception 'FALHA: visitante anônimo não conseguiu consultar os destaques públicos.';
   end if;
 end $$;
