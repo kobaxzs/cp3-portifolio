@@ -25,9 +25,11 @@ npm.cmd run build         # gera dist para publicação
 npm.cmd run preview       # visualiza o build gerado
 ```
 
-O envio do formulário usa `/api/contact`, executado pela Vercel. O Vite sozinho
-não executa essa função. Para testá-la localmente após conectar o projeto à Vercel,
-use `npx.cmd vercel dev`.
+O envio do formulário usa `/api/contact`, executado pela Vercel em produção.
+Localmente, `npm.cmd run dev` disponibiliza a mesma lógica pelo servidor do Vite,
+usando as variáveis do `.env` somente no servidor para acessar Supabase e Resend.
+Reinicie o servidor após alterar essas variáveis. O comando `npm.cmd run preview`
+serve apenas os arquivos estáticos e não executa a API.
 
 ## Tecnologias e funcionalidades
 
@@ -108,15 +110,18 @@ testes exigidos, e ESLint, Prettier e Husky à padronização antes dos commits.
 
 ## Pendências para concluir e entregar
 
-- [ ] Configurar Supabase, tabelas, conta do dono, URLs e variáveis de ambiente.
-- [ ] Testar login, saída, redirecionamento de visitantes e bloqueio de contas
+- [x] Configurar Supabase, tabelas, conta do dono, URLs e variáveis de ambiente.
+- [x] Testar login, saída, redirecionamento de visitantes e bloqueio de contas
       sem autorização, inclusive nas permissões do banco.
 - [ ] Conferir carregamento, erro e listas vazias do painel com o serviço real.
-- [ ] Configurar Resend e fazer um envio real, confirmando recebimento do e-mail
-      e a mesma mensagem no dashboard. Conferir spinner, bloqueio durante envio,
-      sucesso, erro e aviso de mensagem salva com falha no e-mail.
-- [ ] Marcar uma mensagem como respondida e conferir a persistência.
-- [ ] Selecionar destaques e conferir a home em outra janela.
+- [x] Configurar Resend e fazer um envio real, confirmando recebimento do e-mail
+      e a mesma mensagem no dashboard.
+- [x] Conferir bloqueio do botão com “Enviando…” durante o envio.
+- [x] Conferir confirmação de sucesso após o envio.
+- [x] Conferir aviso de mensagem salva com falha no e-mail e confirmar a mensagem no painel.
+- [ ] Conferir spinner e erro no envio.
+- [x] Marcar uma mensagem como respondida e conferir a persistência.
+- [x] Selecionar destaques e conferir a home em outra janela.
 - [ ] Disponibilizar o Git, inicializar o repositório, ativar o hook e publicar
       no GitHub com commits e branches reais, sem `.env` nem arquivos gerados.
 - [ ] Importar na Vercel: branch `main`, build `npm run build`, saída `dist` e

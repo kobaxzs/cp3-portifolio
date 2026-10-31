@@ -46,9 +46,10 @@ export default function LoginPage() {
       </span>
       <p className="eyebrow">ÁREA DO PROPRIETÁRIO</p>
       <h1>
-        Bem-vindo de volta<span className="accent">.</span>
+        Acesso restrito
+        <span className="accent">.</span>
       </h1>
-      <p>Entre para organizar mensagens e escolher os projetos em destaque.</p>
+      <p>Apenas o proprietário tem acesso a esta área.</p>
       {!hasBackend && (
         <div className="notice" role="status">
           O acesso ainda não foi configurado. Preencha as variáveis do Supabase e siga a seção de
@@ -58,8 +59,8 @@ export default function LoginPage() {
       {session && !owner ? (
         <div className="notice">
           <p>
-            Esta conta não tem acesso ao portfólio. Somente o proprietário cadastrado no banco pode
-            abrir o painel.
+            Esta conta não tem permissão para abrir o painel. Saia e entre com a conta do
+            proprietário.
           </p>
           <button className="button button-outline" onClick={exit}>
             Sair desta conta
