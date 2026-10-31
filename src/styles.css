@@ -521,6 +521,9 @@ h1 > span {
   color: var(--green);
 }
 .visual-cross {
+  display: block;
+  width: 1em;
+  height: 1em;
   position: absolute;
   top: -11px;
   right: -19px;
@@ -1055,6 +1058,8 @@ textarea[aria-invalid='true'] {
 }
 .contact-asterisk {
   display: inline-block;
+  width: 1em;
+  height: 1em;
   font-size: 3.8rem;
   line-height: 1;
   color: var(--orange);

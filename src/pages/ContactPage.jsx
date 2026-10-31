@@ -18,9 +18,7 @@ export default function ContactPage() {
       </div>
       <div className="contact-layout">
         <aside className="contact-aside">
-          <span className="contact-asterisk" aria-hidden="true">
-            ✳
-          </span>
+          <Icon name="asterisk" className="contact-asterisk" />
           <h2>Vamos conversar.</h2>
           <p>
             Prefere um contato direto?
