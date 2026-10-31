@@ -2,6 +2,7 @@
 
 Portfólio de Lucas Figueiredo Kobayashi para o CP3 da FIAP.
 GitHub: [kobaxzs](https://github.com/kobaxzs).
+Site publicado: [cp3-portifolio.vercel.app](https://cp3-portifolio.vercel.app).
 Contato: [lucasfkobayashi19@gmail.com](mailto:lucasfkobayashi19@gmail.com).
 
 ## Executar
@@ -93,12 +94,14 @@ api/              entrada da função na Vercel
 server/           lógica do contato e testes
 supabase/         tabelas e permissões do banco
 public/           imagens e arquivos estáticos
+docs/             decisões técnicas, uso da IA e evidências de verificação
+.agents/skills/   procedimento reutilizável de revisão para o Codex
 ```
 
 Componentes em PascalCase, hooks com prefixo `use`, funções e variáveis em
 camelCase. Chamadas às APIs ficam nos serviços, separadas dos componentes visuais.
 
-Use branches `feature/nome` ou `fix/nome` e commits com `feat:`, `fix:`, `docs:`,
+Use branches `feature/nome`, `fix/nome` ou `docs/nome` e commits com `feat:`, `fix:`, `docs:`,
 `style:` ou `test:`. Integre em `main` por pull request, registrando o histórico
 real. Após inicializar o Git, execute `npm.cmd run prepare`: o hook Husky confere
 lint e formatação antes dos commits.
@@ -108,11 +111,29 @@ a chave no navegador. O cache simples dispensa uma biblioteca adicional.
 SVG é adequado às ilustrações vetoriais. Vitest e Testing Library atendem aos
 testes exigidos, e ESLint, Prettier e Husky à padronização antes dos commits.
 
+## Instruções para IA e decisões de engenharia
+
+O [AGENTS.md](AGENTS.md) define os padrões que a IA deve seguir neste repositório:
+responsabilidades das pastas, nomenclatura, validação, branches e commits.
+A [skill de revisão](.agents/skills/revisar-portfolio/SKILL.md) organiza a
+conferência da entrega e os diferentes tipos de evidência.
+
+O [registro do harness e do uso da IA](docs/harness-ia.md) descreve a ferramenta,
+a identificação do modelo informada pelo aluno, os recursos realmente usados
+e as limitações. As [decisões técnicas](docs/decisoes-tecnicas.md) comparam
+alternativas, critérios e limitações da stack e mostram o fluxo de dados.
+
 ## Pendências para concluir e entregar
+
+As verificações de HTTP, API e banco feitas na produção em 31/10/2026 estão
+registradas em [Verificação da publicação](docs/verificacao-publicacao.md),
+com os resultados e as verificações visuais que ainda faltam.
 
 - [x] Configurar Supabase, tabelas, conta do dono, URLs e variáveis de ambiente.
 - [x] Testar login, saída, redirecionamento de visitantes e bloqueio de contas
       sem autorização, inclusive nas permissões do banco.
+- [x] Conferir login e saída no site publicado, novo pedido de login após sair
+      e carregamento das mensagens e dos destaques salvos.
 - [ ] Conferir carregamento, erro e listas vazias do painel com o serviço real.
 - [x] Configurar Resend e fazer um envio real, confirmando recebimento do e-mail
       e a mesma mensagem no dashboard.
@@ -122,19 +143,23 @@ testes exigidos, e ESLint, Prettier e Husky à padronização antes dos commits.
 - [ ] Conferir spinner e erro no envio.
 - [x] Marcar uma mensagem como respondida e conferir a persistência.
 - [x] Selecionar destaques e conferir a home em outra janela.
-- [ ] Disponibilizar o Git, inicializar o repositório, ativar o hook e publicar
+- [x] Disponibilizar o Git, inicializar o repositório, ativar o hook e publicar
       no GitHub com commits e branches reais, sem `.env` nem arquivos gerados.
-- [ ] Importar na Vercel: branch `main`, build `npm run build`, saída `dist` e
+- [x] Importar na Vercel: branch `main`, build `npm run build`, saída `dist` e
       variáveis de ambiente. Confirmar deploy automático após um push real.
 - [ ] Na URL pública, conferir menu, cards, formulário e painel em celular e
       desktop, sem cortes ou rolagem horizontal.
-- [ ] Abrir diretamente o link de um projeto e atualizar o navegador; conferir
-      404, falhas da API e os dados dos repositórios.
-- [ ] Medir Lighthouse mobile na URL pública: performance mínima de 80 e
-      ausência de saltos de layout. Conferir imagens adiadas, painel sob demanda
-      e consultas ao GitHub reutilizadas entre páginas.
-- [ ] Preparar a documentação de instruções para IA exigida pelo enunciado;
-      as orientações antigas foram removidas a pedido nesta limpeza.
+- [x] Abrir diretamente o link de um projeto, atualizar o navegador e conferir
+      a página 404 no site publicado.
+- [ ] Conferir falhas da API do GitHub e os dados dos repositórios na interface.
+- [x] Medir Lighthouse mobile na URL pública: desempenho 100, acessibilidade 100,
+      práticas recomendadas 100, SEO 100 e CLS 0 (relatório de 31/10/2026).
+- [x] Conferir no código imagens adiadas e painel sob demanda; confirmar em teste
+      o reaproveitamento das consultas ao GitHub entre páginas.
+- [x] Preparar instruções para IA, skill de revisão, registro do harness e
+      comparação das decisões técnicas conforme o resumo do enunciado.
+- [ ] Confirmar a skill na interface do Codex e publicar as instruções e a
+      documentação no GitHub. Revisar a identificação do modelo para a apresentação.
 - [ ] Preparar e gravar o vídeo de até oito minutos, com rosto e tela visíveis,
       explicando arquitetura, escolhas técnicas e uso real da IA. Publicar no
       YouTube como não listado.
